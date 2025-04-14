@@ -1,6 +1,6 @@
 
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -11,6 +11,9 @@ const MainLayout: React.FC<MainLayoutProps> = ({
   children, 
   showNavigation = true 
 }) => {
+  const location = useLocation();
+  const isDashboard = location.pathname === "/dashboard";
+  
   return (
     <div className="min-h-screen bg-scode-black flex flex-col">
       {showNavigation && (
@@ -20,20 +23,22 @@ const MainLayout: React.FC<MainLayoutProps> = ({
               <span className="text-xl font-bold text-gradient">S-CODE</span>
             </Link>
             
-            <div className="flex items-center space-x-4">
-              <Link 
-                to="/user-access" 
-                className="text-sm text-white/80 hover:text-white transition-colors"
-              >
-                User Access
-              </Link>
-              <Link 
-                to="/register-premise" 
-                className="text-sm px-4 py-2 bg-scode-blue text-white rounded-md hover:bg-opacity-90 transition-colors"
-              >
-                Register Premise
-              </Link>
-            </div>
+            {!isDashboard && (
+              <div className="flex items-center space-x-4">
+                <Link 
+                  to="/user-access" 
+                  className="text-sm text-white/80 hover:text-white transition-colors"
+                >
+                  User Access
+                </Link>
+                <Link 
+                  to="/register-premise" 
+                  className="text-sm px-4 py-2 bg-scode-blue text-white rounded-md hover:bg-opacity-90 transition-colors"
+                >
+                  Register Premise
+                </Link>
+              </div>
+            )}
           </nav>
         </header>
       )}
