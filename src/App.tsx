@@ -9,6 +9,7 @@ import NotFound from "./pages/NotFound";
 import UserAccess from "./pages/UserAccess";
 import RegisterPremise from "./pages/RegisterPremise";
 import RegisterUser from "./pages/RegisterUser";
+import Dashboard from "./pages/Dashboard";
 
 const queryClient = new QueryClient();
 
@@ -24,6 +25,7 @@ const App = () => (
           <Route path="/user-access" element={<UserAccess />} />
           <Route path="/register-premise" element={<RegisterPremise />} />
           <Route path="/register-user" element={<RegisterUser />} />
+          <Route path="/dashboard" element={<Dashboard />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </TooltipProvider>

@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
@@ -74,13 +73,10 @@ const RegisterPremise = () => {
   const navigateToDashboard = () => {
     toast({
       title: "Navigating to dashboard",
-      description: "Your dashboard is being prepared.",
+      description: "Opening your premise dashboard...",
     });
-    // In a real app, we would navigate to an actual dashboard
-    // For now, we'll just go to the homepage
-    setTimeout(() => {
-      navigate("/");
-    }, 1000);
+    // Navigate to the actual dashboard page
+    navigate("/dashboard");
   };
 
   return (
