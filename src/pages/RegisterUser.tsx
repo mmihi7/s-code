@@ -1,19 +1,27 @@
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Camera, Upload, UserPlus } from "lucide-react";
+import { ArrowLeft, Camera, Upload, UserPlus, X } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/components/ui/use-toast";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogClose } from "@/components/ui/dialog";
 
 const RegisterUser = () => {
   const { toast } = useToast();
   const [step, setStep] = useState(1);
-  
+  const [idPhotoUrl, setIdPhotoUrl] = useState<string | null>(null);
+  const [facePhotoUrl, setFacePhotoUrl] = useState<string | null>(null);
+  const [showCameraDialog, setShowCameraDialog] = useState(false);
+  const [captureType, setCaptureType] = useState<'id' | 'face'>('id');
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
+
   const nextStep = () => {
     setStep(step + 1);
     window.scrollTo(0, 0);
@@ -31,6 +39,99 @@ const RegisterUser = () => {
       description: "Your account has been created.",
     });
     // In real app, would redirect to dashboard or login
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>, type: 'id' | 'face') => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const imageUrl = URL.createObjectURL(file);
+      if (type === 'id') {
+        setIdPhotoUrl(imageUrl);
+      } else {
+        setFacePhotoUrl(imageUrl);
+      }
+      toast({
+        title: "Upload successful",
+        description: type === 'id' ? "ID photo uploaded." : "Face photo uploaded.",
+      });
+    }
+  };
+
+  const openCamera = (type: 'id' | 'face') => {
+    setCaptureType(type);
+    setShowCameraDialog(true);
+    
+    navigator.mediaDevices.getUserMedia({ 
+      video: { facingMode: type === 'face' ? 'user' : 'environment' } 
+    })
+    .then((stream) => {
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        setCameraStream(stream);
+      }
+    })
+    .catch((err) => {
+      console.error("Error accessing camera:", err);
+      toast({
+        title: "Camera error",
+        description: "Could not access camera. Please check permissions.",
+        variant: "destructive"
+      });
+      setShowCameraDialog(false);
+    });
+  };
+
+  const capturePhoto = () => {
+    if (videoRef.current && canvasRef.current) {
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+      const context = canvas.getContext('2d');
+      
+      if (context) {
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        const imageUrl = canvas.toDataURL('image/jpeg');
+        if (captureType === 'id') {
+          setIdPhotoUrl(imageUrl);
+        } else {
+          setFacePhotoUrl(imageUrl);
+        }
+        
+        // Stop camera stream
+        if (cameraStream) {
+          cameraStream.getTracks().forEach(track => track.stop());
+          setCameraStream(null);
+        }
+        
+        setShowCameraDialog(false);
+        toast({
+          title: "Photo captured",
+          description: captureType === 'id' ? "ID photo captured successfully." : "Face photo captured successfully."
+        });
+      }
+    }
+  };
+
+  const closeCamera = () => {
+    if (cameraStream) {
+      cameraStream.getTracks().forEach(track => track.stop());
+      setCameraStream(null);
+    }
+    setShowCameraDialog(false);
+  };
+  
+  const removePhoto = (type: 'id' | 'face') => {
+    if (type === 'id') {
+      setIdPhotoUrl(null);
+    } else {
+      setFacePhotoUrl(null);
+    }
+    toast({
+      title: "Photo removed",
+      description: type === 'id' ? "ID photo removed." : "Face photo removed."
+    });
   };
 
   return (
@@ -149,35 +250,118 @@ const RegisterUser = () => {
                       />
                     </div>
                     
+                    {/* ID Photo Upload */}
                     <div className="space-y-2">
                       <label className="text-sm text-white/70">ID Photo*</label>
-                      <div className="border-2 border-dashed border-white/20 rounded-lg p-6 flex flex-col items-center justify-center bg-black/30">
-                        <Upload className="h-10 w-10 text-white/40 mb-2" />
-                        <p className="text-sm text-white/60 text-center mb-2">
-                          Upload a clear photo of your ID
-                        </p>
-                        <Button variant="outline" size="sm" type="button">
-                          Choose File
-                        </Button>
-                      </div>
+                      {!idPhotoUrl ? (
+                        <div className="border-2 border-dashed border-white/20 rounded-lg p-6 flex flex-col items-center justify-center bg-black/30">
+                          <Upload className="h-10 w-10 text-white/40 mb-2" />
+                          <p className="text-sm text-white/60 text-center mb-2">
+                            Upload a clear photo of your ID
+                          </p>
+                          <div className="flex gap-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              type="button"
+                              onClick={() => document.getElementById('idPhotoInput')?.click()}
+                            >
+                              Choose File
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              type="button"
+                              onClick={() => openCamera('id')}
+                            >
+                              Take Photo
+                            </Button>
+                            <input
+                              id="idPhotoInput"
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => handleFileUpload(e, 'id')}
+                            />
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="border-2 border-white/20 rounded-lg overflow-hidden">
+                          <div className="relative">
+                            <img 
+                              src={idPhotoUrl} 
+                              alt="ID" 
+                              className="w-full h-auto object-contain max-h-48"
+                            />
+                            <Button
+                              variant="destructive"
+                              size="icon"
+                              type="button"
+                              className="absolute top-2 right-2"
+                              onClick={() => removePhoto('id')}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                     
+                    {/* Face Photo Upload */}
                     <div className="space-y-2">
                       <label className="text-sm text-white/70">Face Photo*</label>
-                      <div className="border-2 border-dashed border-white/20 rounded-lg p-6 flex flex-col items-center justify-center bg-black/30">
-                        <Camera className="h-10 w-10 text-white/40 mb-2" />
-                        <p className="text-sm text-white/60 text-center mb-2">
-                          Take a photo or upload a recent photo of yourself
-                        </p>
-                        <div className="flex gap-2">
-                          <Button variant="outline" size="sm" type="button">
-                            Take Photo
-                          </Button>
-                          <Button variant="outline" size="sm" type="button">
-                            Upload
-                          </Button>
+                      {!facePhotoUrl ? (
+                        <div className="border-2 border-dashed border-white/20 rounded-lg p-6 flex flex-col items-center justify-center bg-black/30">
+                          <Camera className="h-10 w-10 text-white/40 mb-2" />
+                          <p className="text-sm text-white/60 text-center mb-2">
+                            Take a photo or upload a recent photo of yourself
+                          </p>
+                          <div className="flex gap-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              type="button"
+                              onClick={() => document.getElementById('facePhotoInput')?.click()}
+                            >
+                              Choose File
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              type="button"
+                              onClick={() => openCamera('face')}
+                            >
+                              Take Photo
+                            </Button>
+                            <input
+                              id="facePhotoInput"
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              onChange={(e) => handleFileUpload(e, 'face')}
+                            />
+                          </div>
                         </div>
-                      </div>
+                      ) : (
+                        <div className="border-2 border-white/20 rounded-lg overflow-hidden">
+                          <div className="relative">
+                            <img 
+                              src={facePhotoUrl} 
+                              alt="Face" 
+                              className="w-full h-auto object-contain max-h-48"
+                            />
+                            <Button
+                              variant="destructive"
+                              size="icon"
+                              type="button"
+                              className="absolute top-2 right-2"
+                              onClick={() => removePhoto('face')}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -262,6 +446,35 @@ const RegisterUser = () => {
           </Card>
         </div>
       </div>
+
+      {/* Camera Dialog */}
+      <Dialog open={showCameraDialog} onOpenChange={setShowCameraDialog}>
+        <DialogContent className="sm:max-w-md" onInteractOutside={closeCamera}>
+          <DialogHeader>
+            <DialogTitle>Take a {captureType === 'id' ? 'Photo of ID' : 'Selfie'}</DialogTitle>
+            <DialogClose onClick={closeCamera} />
+          </DialogHeader>
+          <div className="flex flex-col space-y-2 items-center">
+            <div className="w-full max-w-sm aspect-video relative bg-black rounded-md overflow-hidden">
+              <video 
+                ref={videoRef} 
+                autoPlay 
+                playsInline 
+                muted 
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <canvas ref={canvasRef} className="hidden" />
+            <Button 
+              onClick={capturePhoto}
+              className="bg-scode-blue hover:bg-scode-blue/90"
+            >
+              <Camera className="mr-2 h-4 w-4" />
+              Capture Photo
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </MainLayout>
   );
 };

@@ -1,19 +1,21 @@
 
-import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useState, useRef } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Building, Check, QrCode } from "lucide-react";
+import { ArrowLeft, Building, Check, Download, QrCode } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/components/ui/use-toast";
 
 const RegisterPremise = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [registrationComplete, setRegistrationComplete] = useState(false);
+  const qrCodeRef = useRef<HTMLDivElement>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,6 +24,63 @@ const RegisterPremise = () => {
       title: "Premise registration successful",
       description: "Your premise has been registered successfully.",
     });
+  };
+
+  const handleDownloadQR = () => {
+    if (!qrCodeRef.current) return;
+
+    // In a real app, we would generate and download an actual QR code image
+    // Here we'll simulate it by creating a dummy image
+    const canvas = document.createElement("canvas");
+    canvas.width = 300;
+    canvas.height = 300;
+    const ctx = canvas.getContext("2d");
+    
+    if (ctx) {
+      // Draw QR code (simplified representation)
+      ctx.fillStyle = "#000000";
+      ctx.fillRect(0, 0, 300, 300);
+      ctx.fillStyle = "#1E90FF";
+      ctx.fillRect(50, 50, 200, 200);
+      
+      // Create QR patterns
+      ctx.fillStyle = "#FFFFFF";
+      for (let i = 0; i < 5; i++) {
+        for (let j = 0; j < 5; j++) {
+          if ((i + j) % 2 === 0) {
+            ctx.fillRect(70 + i * 30, 70 + j * 30, 25, 25);
+          }
+        }
+      }
+      
+      // Convert to data URL
+      const dataUrl = canvas.toDataURL("image/png");
+      
+      // Create a download link
+      const link = document.createElement("a");
+      link.download = "scode-premise-qr.png";
+      link.href = dataUrl;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast({
+        title: "QR Code Downloaded",
+        description: "Your premise QR code has been downloaded successfully.",
+      });
+    }
+  };
+
+  const navigateToDashboard = () => {
+    toast({
+      title: "Navigating to dashboard",
+      description: "Your dashboard is being prepared.",
+    });
+    // In a real app, we would navigate to an actual dashboard
+    // For now, we'll just go to the homepage
+    setTimeout(() => {
+      navigate("/");
+    }, 1000);
   };
 
   return (
@@ -243,7 +302,7 @@ const RegisterPremise = () => {
                       Your premise has been successfully registered with S-Code. You can now manage your visitor flow digitally.
                     </p>
                     
-                    <div className="bg-black/30 p-6 rounded-xl mb-6 w-full max-w-xs">
+                    <div className="bg-black/30 p-6 rounded-xl mb-6 w-full max-w-xs" ref={qrCodeRef}>
                       <div className="flex justify-center mb-3">
                         <QrCode className="w-32 h-32 text-scode-blue" />
                       </div>
@@ -253,10 +312,14 @@ const RegisterPremise = () => {
                     </div>
                     
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
-                      <Button variant="outline">
+                      <Button variant="outline" onClick={handleDownloadQR}>
+                        <Download className="mr-2 h-4 w-4" />
                         Download QR Code
                       </Button>
-                      <Button className="bg-scode-blue hover:bg-scode-blue/90">
+                      <Button 
+                        className="bg-scode-blue hover:bg-scode-blue/90"
+                        onClick={navigateToDashboard}
+                      >
                         Go to Dashboard
                       </Button>
                     </div>
