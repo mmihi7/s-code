@@ -5,17 +5,14 @@ import { Link, useLocation } from "react-router-dom";
 interface MainLayoutProps {
   children: React.ReactNode;
   showNavigation?: boolean;
-  premiseName?: string;
 }
 
 const MainLayout: React.FC<MainLayoutProps> = ({ 
   children, 
-  showNavigation = true,
-  premiseName
+  showNavigation = true 
 }) => {
   const location = useLocation();
   const isDashboard = location.pathname === "/dashboard";
-  const isLoggedIn = isDashboard; // In a real app, this would come from an auth context
   
   return (
     <div className="min-h-screen bg-scode-black flex flex-col">
@@ -26,8 +23,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
               <span className="text-xl font-bold text-gradient">S-CODE</span>
             </Link>
             
-            {/* Only show these links if NOT logged in and NOT on dashboard */}
-            {!isLoggedIn && !isDashboard && (
+            {!isDashboard && (
               <div className="flex items-center space-x-4">
                 <Link 
                   to="/user-access" 
@@ -41,27 +37,6 @@ const MainLayout: React.FC<MainLayoutProps> = ({
                 >
                   Register Premise
                 </Link>
-              </div>
-            )}
-            
-            {/* If logged in, show different navigation options */}
-            {isLoggedIn && (
-              <div className="flex items-center space-x-4">
-                <Link 
-                  to="/settings" 
-                  className="text-sm text-white/80 hover:text-white transition-colors"
-                >
-                  Settings
-                </Link>
-                <button 
-                  className="text-sm px-4 py-2 bg-transparent border border-white/20 text-white rounded-md hover:bg-white/10 transition-colors"
-                  onClick={() => {
-                    // In a real app, this would call a logout function
-                    window.location.href = "/";
-                  }}
-                >
-                  Logout
-                </button>
               </div>
             )}
           </nav>
