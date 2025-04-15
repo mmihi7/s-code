@@ -30,7 +30,7 @@ const UserAccess = () => {
           title: "Login successful",
           description: "Welcome back to S-Code!"
         });
-        navigate("/dashboard");
+        navigate("/user-dashboard"); // Redirect to the user dashboard
       } else {
         toast({
           title: "Login failed",

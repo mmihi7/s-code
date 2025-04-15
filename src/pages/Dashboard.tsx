@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
@@ -60,121 +59,20 @@ import {
   Coins
 } from "lucide-react";
 
-// Mock data for visitor log
-const mockVisitorData = [
-  { id: 1, name: "John Doe", purpose: "Meeting", host: "Sarah Jones", checkIn: "2025-04-14 09:30 AM", checkOut: "2025-04-14 10:45 AM", status: "Completed" },
-  { id: 2, name: "Mary Smith", purpose: "Interview", host: "James Wilson", checkIn: "2025-04-14 11:00 AM", checkOut: "", status: "Active" },
-  { id: 3, name: "Robert Johnson", purpose: "Delivery", host: "Reception", checkIn: "2025-04-14 12:15 PM", checkOut: "2025-04-14 12:30 PM", status: "Completed" },
-  { id: 4, name: "Elizabeth Brown", purpose: "Maintenance", host: "Facility Manager", checkIn: "2025-04-14 13:45 PM", checkOut: "", status: "Active" },
-  { id: 5, name: "Michael Davis", purpose: "Client Meeting", host: "CEO Office", checkIn: "2025-04-14 14:30 PM", checkOut: "", status: "Pending Approval" },
-  { id: 6, name: "James Wilson", purpose: "Sales Presentation", host: "Marketing Dept", checkIn: "2025-04-14 15:00 PM", checkOut: "2025-04-14 16:30 PM", status: "Completed" },
-  { id: 7, name: "Patricia Moore", purpose: "Job Interview", host: "HR Department", checkIn: "2025-04-14 16:15 PM", checkOut: "", status: "Declined" },
-];
-
-// Plan features
-const basicPlanFeatures = [
-  "Collect visitor name, phone, email",
-  "ID number collection",
-  "ID photo capture",
-  "Face photo capture",
-  "Digital signature generation",
-  "Basic visitor dashboard",
-  "Basic analytics",
-  "Simple visitor approval",
-  "Basic group registration"
-];
-
-// Premium features list
-const premiumFeatures = [
-  { 
-    id: "custom-info", 
-    name: "Custom Information", 
-    icon: FileSpreadsheet, 
-    description: "Collect additional fields like purpose (official/personal), person being visited, etc.",
-    price: "Included in Premium Plan"
-  },
-  { 
-    id: "premium-dashboard", 
-    name: "Premium Dashboard", 
-    icon: PieChart, 
-    description: "Advanced dashboard with more metrics and customizable views.",
-    price: "Included in Premium Plan"
-  },
-  { 
-    id: "multi-approval", 
-    name: "Multi-level Approval", 
-    icon: Shield, 
-    description: "Enable multi-level approval for visitors including host notification and security verification.",
-    price: "Included in Premium Plan"
-  },
-  { 
-    id: "exit-workflow", 
-    name: "Exit Workflow", 
-    icon: LogOut, 
-    description: "Track visitor exit times and manage departure processes.",
-    price: "Included in Premium Plan"
-  },
-  { 
-    id: "vehicle-reg", 
-    name: "Vehicle/Motorcycle Registration", 
-    icon: Car, 
-    description: "Register vehicles and motorcycles associated with visitors.",
-    price: "Included in Premium Plan"
-  },
-  { 
-    id: "group-reg", 
-    name: "Multiple Persons (Group) Registration", 
-    icon: Users, 
-    description: "Register multiple visitors at once as a group.",
-    price: "Included in Premium Plan"
-  },
-  { 
-    id: "analytics", 
-    name: "Advanced Analytics", 
-    icon: ChartBar, 
-    description: "Get detailed visitor insights, trend analysis, peak hour reports, and custom data exports.",
-    price: "Included in Premium Plan"
-  },
-  { 
-    id: "security", 
-    name: "Enhanced Security", 
-    icon: Lock, 
-    description: "ID verification, watchlist checking, and advanced security features.",
-    price: "Included in Premium Plan"
-  },
-  { 
-    id: "compliance", 
-    name: "Compliance Reporting", 
-    icon: FileSpreadsheet, 
-    description: "Generate compliance reports for regulatory requirements automatically.",
-    price: "Included in Premium Plan"
-  },
-];
-
-// Extended features
-const extendedFeatures = [
-  { 
-    id: "ussd", 
-    name: "USSD Integration", 
-    icon: Smartphone, 
-    description: "Enable non-smartphone check-ins via USSD for visitors without the app.",
-    price: "Additional charges may apply"
-  },
-  { 
-    id: "sms", 
-    name: "SMS Notifications", 
-    icon: MessageSquare, 
-    description: "Send automated SMS alerts to hosts when their visitors arrive.",
-    price: "Additional charges may apply"
-  },
-  { 
-    id: "api", 
-    name: "API Integration", 
-    icon: Plug, 
-    description: "Connect S-Code with your existing systems using our API.",
-    price: "Additional charges may apply"
-  },
-];
+const AccountTier = ({ tier }: { tier: "Basic" | "Premium" }) => (
+  <div className="bg-secondary border border-white/10 rounded-lg p-3 flex items-center justify-between">
+    <div className="flex items-center gap-2">
+      <div className={`w-3 h-3 rounded-full ${tier === "Premium" ? "bg-amber-400" : "bg-green-400"}`}></div>
+      <span className="font-medium">{tier} Account</span>
+    </div>
+    {tier === "Basic" && (
+      <Button variant="outline" size="sm" className="h-7 text-xs">
+        <Zap className="h-3 w-3 mr-1" />
+        Upgrade
+      </Button>
+    )}
+  </div>
+);
 
 const Dashboard = () => {
   const { toast } = useToast();
@@ -183,7 +81,6 @@ const Dashboard = () => {
   const [showPricingPlans, setShowPricingPlans] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   
-  // Mock company name from registration (in a real app this would come from API/database)
   const companyName = "ABC Corporation";
   const currentPlan = "Basic";
   
@@ -200,7 +97,6 @@ const Dashboard = () => {
       description: "Your visitor data is being prepared for export.",
     });
     
-    // In a real app, this would trigger an actual CSV download
     setTimeout(() => {
       const element = document.createElement("a");
       const mockCsv = "data:text/csv;charset=utf-8,ID,Name,Purpose,Host,Check In,Check Out,Status\n" +
@@ -228,7 +124,6 @@ const Dashboard = () => {
   return (
     <MainLayout>
       <div className="flex flex-col md:flex-row min-h-[calc(100vh-120px)]">
-        {/* Sidebar for premium features */}
         <div className={`bg-black/40 border-r border-white/10 ${sidebarCollapsed ? 'w-16' : 'w-72'} transition-all duration-300`}>
           <div className="p-4 flex items-center justify-between border-b border-white/10">
             <div className={`font-semibold text-white ${sidebarCollapsed ? 'hidden' : 'flex items-center'}`}>
@@ -246,7 +141,6 @@ const Dashboard = () => {
           </div>
           
           <div className="py-4">
-            {/* Premium Features Section */}
             <div className={`px-4 py-2 text-xs uppercase text-white/50 ${sidebarCollapsed ? 'hidden' : 'block'}`}>
               Premium Features - KSH 7,500/month
             </div>
@@ -299,7 +193,52 @@ const Dashboard = () => {
               </Dialog>
             ))}
             
-            {/* Extended Features Section */}
+            {extendedFeatures.map((feature) => (
+              <Dialog key={feature.id}>
+                <DialogTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    className="w-full text-left justify-start mb-1 px-4"
+                  >
+                    <feature.icon className="h-5 w-5 mr-2 text-scode-blue" />
+                    <span>{feature.name}*</span>
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="bg-secondary border-white/10 text-white">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center text-xl">
+                      <feature.icon className="h-5 w-5 mr-2 text-scode-blue" />
+                      {feature.name}
+                    </DialogTitle>
+                    <DialogDescription className="text-white/70">
+                      Additional charges may apply
+                    </DialogDescription>
+                  </DialogHeader>
+                  
+                  <div className="space-y-4 py-4">
+                    <p className="text-white">{feature.description}</p>
+                    <div className="bg-black/30 p-4 rounded-md flex items-center justify-between">
+                      <div className="flex items-center">
+                        <Star className="text-yellow-400 h-5 w-5 mr-2" />
+                        <span>Extended Feature</span>
+                      </div>
+                      <span className="font-semibold text-scode-blue">{feature.price}</span>
+                    </div>
+                  </div>
+                  
+                  <DialogFooter>
+                    <Button variant="outline">Learn More</Button>
+                    <Button 
+                      className="bg-scode-blue hover:bg-scode-blue/90"
+                      onClick={() => handleUpgradeClick(feature.id)}
+                    >
+                      Request Quote
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            ))}
+            
             {!sidebarCollapsed && (
               <div className="border-t border-white/10 mt-4 pt-4">
                 <div className="px-4 py-2 text-xs uppercase text-white/50">
@@ -375,7 +314,6 @@ const Dashboard = () => {
                     </DialogHeader>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-4">
-                      {/* Basic Plan */}
                       <div className="border border-white/10 rounded-lg overflow-hidden">
                         <div className="bg-black/30 p-4">
                           <h3 className="text-lg font-semibold">Basic Plan</h3>
@@ -402,7 +340,6 @@ const Dashboard = () => {
                         </div>
                       </div>
                       
-                      {/* Premium Plan */}
                       <div className="border border-scode-blue/30 rounded-lg overflow-hidden relative">
                         <div className="absolute top-0 right-0 bg-scode-blue text-white text-xs px-3 py-1 rounded-bl-lg">
                           RECOMMENDED
@@ -453,7 +390,6 @@ const Dashboard = () => {
           </div>
         </div>
         
-        {/* Main content */}
         <div className="flex-1 p-6">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4">
             <div>
@@ -763,7 +699,6 @@ const Dashboard = () => {
                 </Table>
               </div>
               
-              {/* Basic pagination */}
               <div className="flex items-center justify-between mt-4">
                 <div className="text-sm text-white/70">
                   Showing <b>7</b> of <b>7</b> visitors
@@ -780,7 +715,7 @@ const Dashboard = () => {
             <Collapsible className="border border-white/10 rounded-md">
               <CollapsibleTrigger className="flex items-center justify-between w-full p-4 hover:bg-white/5">
                 <div className="flex items-center">
-                  <PieChart className="h-5 w-5 mr-2 text-scode-blue" />
+                  <PieChart className="h-5 w-5 mr-2" />
                   <h3 className="font-medium">Basic Analytics</h3>
                 </div>
                 <ChevronDown className="h-5 w-5" />

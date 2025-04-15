@@ -10,6 +10,7 @@ import UserAccess from "./pages/UserAccess";
 import RegisterPremise from "./pages/RegisterPremise";
 import RegisterUser from "./pages/RegisterUser";
 import Dashboard from "./pages/Dashboard";
+import UserDashboard from "./pages/UserDashboard";
 import Settings from "./pages/Settings";
 import PremiseLogin from "./pages/PremiseLogin";
 
@@ -29,6 +30,7 @@ const App = () => (
           <Route path="/register-premise" element={<RegisterPremise />} />
           <Route path="/register-user" element={<RegisterUser />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/user-dashboard" element={<UserDashboard />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
