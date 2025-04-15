@@ -1,10 +1,13 @@
 
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import MainLayout from "@/components/layout/MainLayout";
 import { ArrowRight, UserPlus, Building } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const Index = () => {
+  const navigate = useNavigate();
+
   return (
     <MainLayout showNavigation={false}>
       <div className="min-h-[calc(100vh-80px)] flex flex-col items-center justify-center p-6">
@@ -33,33 +36,42 @@ const Index = () => {
             className="grid md:grid-cols-2 gap-6 mt-8"
           >
             <Link 
-              to="/user-access" 
-              className="group flex flex-col items-center justify-center p-8 rounded-xl bg-gradient-to-br from-secondary to-secondary/50 border border-white/10 text-center hover:border-scode-blue/50 transition-all"
-            >
-              <div className="w-16 h-16 bg-scode-blue/20 rounded-full flex items-center justify-center mb-4 group-hover:bg-scode-blue/30 transition-colors">
-                <UserPlus className="w-8 h-8 text-scode-blue" />
-              </div>
-              <h2 className="text-xl font-semibold mb-2">User Access</h2>
-              <p className="text-white/60 mb-4">Visitor login and secure check-in to premises</p>
-              <span className="inline-flex items-center text-scode-blue">
-                Get started <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </span>
-            </Link>
-            
-            <Link 
               to="/register-premise" 
               className="group flex flex-col items-center justify-center p-8 rounded-xl bg-gradient-to-br from-secondary to-secondary/50 border border-white/10 text-center hover:border-scode-blue/50 transition-all"
             >
               <div className="w-16 h-16 bg-scode-blue/20 rounded-full flex items-center justify-center mb-4 group-hover:bg-scode-blue/30 transition-colors">
                 <Building className="w-8 h-8 text-scode-blue" />
               </div>
-              <h2 className="text-xl font-semibold mb-2">Register Premise</h2>
-              <p className="text-white/60 mb-4">Generate QR codes and manage visitor flow</p>
+              <h2 className="text-xl font-semibold mb-2">Get Started</h2>
+              <p className="text-white/60 mb-4">Register your premise and generate QR codes</p>
               <span className="inline-flex items-center text-scode-blue">
-                Get started <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                Register <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
+              </span>
+            </Link>
+            
+            <Link 
+              to="/register-user" 
+              className="group flex flex-col items-center justify-center p-8 rounded-xl bg-gradient-to-br from-secondary to-secondary/50 border border-white/10 text-center hover:border-scode-blue/50 transition-all"
+            >
+              <div className="w-16 h-16 bg-scode-blue/20 rounded-full flex items-center justify-center mb-4 group-hover:bg-scode-blue/30 transition-colors">
+                <UserPlus className="w-8 h-8 text-scode-blue" />
+              </div>
+              <h2 className="text-xl font-semibold mb-2">Sign Up</h2>
+              <p className="text-white/60 mb-4">Create a new visitor account</p>
+              <span className="inline-flex items-center text-scode-blue">
+                Register <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
               </span>
             </Link>
           </motion.div>
+
+          <div className="text-center mt-6">
+            <button 
+              onClick={() => navigate("/user-access")}
+              className="text-sm text-white/60 hover:text-white transition-colors underline"
+            >
+              Already have an account? Log In
+            </button>
+          </div>
         </div>
       </div>
     </MainLayout>
