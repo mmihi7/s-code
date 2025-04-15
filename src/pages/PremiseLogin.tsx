@@ -5,10 +5,10 @@ import MainLayout from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { UserPlus, LogIn, ArrowLeft } from "lucide-react";
+import { Building, LogIn, ArrowLeft } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 
-const UserAccess = () => {
+const PremiseLogin = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoggingIn, setIsLoggingIn] = useState(false);
@@ -27,8 +27,8 @@ const UserAccess = () => {
       // For demo, any non-empty credentials will work
       if (email.trim() && password.trim()) {
         toast({
-          title: "Login successful",
-          description: "Welcome back to S-Code!"
+          title: "Premise login successful",
+          description: "Welcome back to your S-Code dashboard!"
         });
         navigate("/dashboard");
       } else {
@@ -61,22 +61,22 @@ const UserAccess = () => {
             <CardHeader>
               <div className="flex items-center justify-center mb-2">
                 <div className="w-12 h-12 bg-scode-blue/20 rounded-full flex items-center justify-center">
-                  <UserPlus className="w-6 h-6 text-scode-blue" />
+                  <Building className="w-6 h-6 text-scode-blue" />
                 </div>
               </div>
-              <CardTitle className="text-2xl text-center">Visitor Login</CardTitle>
+              <CardTitle className="text-2xl text-center">Premise Login</CardTitle>
               <CardDescription className="text-center">
-                Login to check in at S-Code locations
+                Access your premise dashboard
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <form onSubmit={handleLogin} className="space-y-4">
                 <div className="space-y-2">
-                  <label htmlFor="email" className="text-sm text-white/70">Email or Phone Number</label>
+                  <label htmlFor="email" className="text-sm text-white/70">Email</label>
                   <Input 
                     id="email" 
-                    type="text" 
-                    placeholder="Enter your email or phone" 
+                    type="email" 
+                    placeholder="Enter your premise email" 
                     className="bg-background border-white/20"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -101,27 +101,18 @@ const UserAccess = () => {
                   type="submit"
                 >
                   <LogIn className="w-4 h-4 mr-2" /> 
-                  {isLoggingIn ? "Logging in..." : "Log In"}
+                  {isLoggingIn ? "Logging in..." : "Log In to Dashboard"}
                 </Button>
               </form>
             </CardContent>
             <CardFooter className="flex flex-col space-y-3">
               <div className="text-sm text-center text-white/60">
-                Are you a premise owner?
-              </div>
-              <Button variant="outline" className="w-full mb-2" asChild>
-                <Link to="/premise-login">
-                  Premise Owner Login
-                </Link>
-              </Button>
-              
-              <div className="text-sm text-center text-white/60 mt-2">
-                Don't have a visitor account yet?
+                Don't have a premise account yet?
               </div>
               <Button variant="outline" className="w-full" asChild>
-                <Link to="/register-user">
-                  <UserPlus className="w-4 h-4 mr-2" /> 
-                  Register as a Visitor
+                <Link to="/register-premise">
+                  <Building className="w-4 h-4 mr-2" /> 
+                  Register Your Premise
                 </Link>
               </Button>
             </CardFooter>
@@ -132,4 +123,4 @@ const UserAccess = () => {
   );
 };
 
-export default UserAccess;
+export default PremiseLogin;

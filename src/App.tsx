@@ -11,6 +11,7 @@ import RegisterPremise from "./pages/RegisterPremise";
 import RegisterUser from "./pages/RegisterUser";
 import Dashboard from "./pages/Dashboard";
 import Settings from "./pages/Settings";
+import PremiseLogin from "./pages/PremiseLogin";
 
 const queryClient = new QueryClient();
 
@@ -24,6 +25,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/user-access" element={<UserAccess />} />
+          <Route path="/premise-login" element={<PremiseLogin />} />
           <Route path="/register-premise" element={<RegisterPremise />} />
           <Route path="/register-user" element={<RegisterUser />} />
           <Route path="/dashboard" element={<Dashboard />} />
