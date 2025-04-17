@@ -17,7 +17,6 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <BrowserRouter>
-      {/* TooltipProvider should be inside BrowserRouter */}
       <TooltipProvider>
         <Toaster />
         <Sonner />
