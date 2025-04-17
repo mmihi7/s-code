@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Camera, QrCode, History, LocationIcon, Clock, ChevronRight, X } from "lucide-react";
+import { Camera, QrCode, History, MapPin, Clock, ChevronRight, X } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 
 const UserDashboard = () => {
@@ -135,7 +135,7 @@ const UserDashboard = () => {
                         >
                           <div className="flex items-start gap-3">
                             <div className="w-9 h-9 rounded-full bg-scode-blue/20 flex items-center justify-center">
-                              <LocationIcon className="w-4 h-4 text-scode-blue" />
+                              <MapPin className="w-4 h-4 text-scode-blue" />
                             </div>
                             <div>
                               <p className="font-medium">{visit.premiseName}</p>
