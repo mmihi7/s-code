@@ -2,8 +2,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import MainLayout from "@/components/layout/MainLayout";
-import { ArrowRight, Building, LogIn, QrCode } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { ArrowRight, QrCode } from "lucide-react";
 import { Canvas } from "@react-three/fiber";
 import IsometricPremises from "@/components/animations/IsometricPremises";
 
@@ -45,31 +44,24 @@ const Index = () => {
             </Canvas>
           </div>
           
-          {/* Right column - Registration Card */}
+          {/* Right column - Registration Link */}
           <div className="flex justify-center items-center">
-            <div className="group flex flex-col items-center justify-center p-8 rounded-xl bg-gradient-to-br from-secondary to-secondary/50 border border-white/10 text-center hover:border-scode-blue/50 transition-all max-w-md w-full">
+            <Link 
+              to="/register-premise"
+              className="group flex flex-col items-center justify-center p-6 rounded-xl bg-scode-blue/20 hover:bg-scode-blue/30 transition-colors w-full max-w-md text-center"
+            >
               <div className="w-16 h-16 bg-scode-blue/20 rounded-full flex items-center justify-center mb-4 group-hover:bg-scode-blue/30 transition-colors">
                 <QrCode className="w-8 h-8 text-scode-blue" />
               </div>
               
-              <h2 className="text-xl font-semibold text-white mb-4">Create a digital visitor management system for your organization</h2>
+              <span className="text-lg font-semibold text-white mb-4 hover:text-white/90 transition-colors">
+                Register Your Premise
+              </span>
               
-              <Link 
-                to="/register-premise"
-                className="mt-4 inline-flex items-center px-6 py-3 bg-scode-blue text-white rounded-md hover:bg-scode-blue/90 transition-colors"
-              >
-                Register Your Premise <ArrowRight className="ml-2 w-5 h-5" />
-              </Link>
-              
-              <div className="mt-4 pt-4 border-t border-white/10 w-full">
-                <Link 
-                  to="/premise-login" 
-                  className="text-sm text-white/60 hover:text-white transition-colors flex items-center justify-center"
-                >
-                  <LogIn className="w-3 h-3 mr-1" /> Premise Owner Login
-                </Link>
+              <div className="flex items-center text-white/60 hover:text-white transition-colors">
+                Get Started <ArrowRight className="ml-2 w-5 h-5" />
               </div>
-            </div>
+            </Link>
           </div>
         </motion.div>
       </div>
