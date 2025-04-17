@@ -12,8 +12,25 @@ const colors = {
   person2: "#0F4C81",
 };
 
+interface BuildingProps {
+  position: [number, number, number];
+  scale: [number, number, number];
+  color: string;
+}
+
+interface PersonProps {
+  position: [number, number, number];
+  color: string;
+  moveTo: [number, number, number];
+  speed: number;
+}
+
+interface QrHighlightProps {
+  position: [number, number, number];
+}
+
 const IsometricPremises = () => {
-  const groupRef = useRef();
+  const groupRef = useRef<THREE.Group>(null);
   
   useFrame((state, delta) => {
     if (groupRef.current) {
@@ -62,7 +79,7 @@ const IsometricPremises = () => {
 };
 
 // Building component
-const Building = ({ position, scale, color }) => {
+const Building = ({ position, scale, color }: BuildingProps) => {
   return (
     <mesh position={position} castShadow receiveShadow>
       <boxGeometry args={scale} />
@@ -73,8 +90,8 @@ const Building = ({ position, scale, color }) => {
 };
 
 // QR Code highlight
-const QrHighlight = ({ position }) => {
-  const ref = useRef();
+const QrHighlight = ({ position }: QrHighlightProps) => {
+  const ref = useRef<THREE.Mesh>(null);
   
   useFrame((state, delta) => {
     if (ref.current) {
@@ -87,14 +104,18 @@ const QrHighlight = ({ position }) => {
   return (
     <mesh position={position} ref={ref}>
       <boxGeometry args={[0.5, 0.5, 0.1]} />
-      <meshStandardMaterial color={colors.highlight} emissive={colors.highlight} emissiveIntensity={0.5} />
+      <meshStandardMaterial 
+        color={colors.highlight} 
+        emissive={colors.highlight} 
+        emissiveIntensity={0.5} 
+      />
     </mesh>
   );
 };
 
 // Moving Person component
-const Person = ({ position, color, moveTo, speed }) => {
-  const ref = useRef();
+const Person = ({ position, color, moveTo, speed }: PersonProps) => {
+  const ref = useRef<THREE.Group>(null);
   const dir = useRef(1);
   const startPos = useRef(new THREE.Vector3(...position));
   const endPos = useRef(new THREE.Vector3(...moveTo));
