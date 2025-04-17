@@ -6,13 +6,11 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
-import UserAccess from "./pages/UserAccess";
 import RegisterPremise from "./pages/RegisterPremise";
-import RegisterUser from "./pages/RegisterUser";
 import Dashboard from "./pages/Dashboard";
-import UserDashboard from "./pages/UserDashboard";
 import Settings from "./pages/Settings";
 import PremiseLogin from "./pages/PremiseLogin";
+import VisitorEntry from "./pages/VisitorEntry";
 
 const queryClient = new QueryClient();
 
@@ -25,13 +23,11 @@ const App = () => (
         <Sonner />
         <Routes>
           <Route path="/" element={<Index />} />
-          <Route path="/user-access" element={<UserAccess />} />
           <Route path="/premise-login" element={<PremiseLogin />} />
           <Route path="/register-premise" element={<RegisterPremise />} />
-          <Route path="/register-user" element={<RegisterUser />} />
           <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/user-dashboard" element={<UserDashboard />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/visitor/:premiseId" element={<VisitorEntry />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </TooltipProvider>
