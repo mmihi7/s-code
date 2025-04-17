@@ -74,7 +74,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
       
       <footer className="w-full py-6 px-6 border-t border-white/10 bg-black/30">
         <div className="max-w-7xl mx-auto text-center text-white/60 text-sm">
-          <p>© {new Date().getFullYear()} S-Code. Transforming Visitor Management in Kenya.</p>
+          <p>© {new Date().getFullYear()} S-Code Africa. Transforming Visitor Management in Kenya.</p>
         </div>
       </footer>
     </div>
