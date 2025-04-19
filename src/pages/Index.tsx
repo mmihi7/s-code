@@ -1,5 +1,5 @@
 
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import MainLayout from "@/components/layout/MainLayout";
 import { ArrowRight, QrCode } from "lucide-react";
@@ -7,6 +7,8 @@ import { Canvas } from "@react-three/fiber";
 import IsometricPremises from "@/components/animations/IsometricPremises";
 
 const Index = () => {
+  const navigate = useNavigate();
+
   return (
     <MainLayout showNavigation={false}>
       <div className="min-h-[calc(100vh-80px)] flex flex-col items-center p-0">
@@ -25,7 +27,7 @@ const Index = () => {
           </p>
         </motion.div>
         
-        {/* Main section with animation and registration link */}
+        {/* Main section with animation and registration card */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -46,7 +48,7 @@ const Index = () => {
           <div className="flex justify-center items-center">
             <Link 
               to="/register-premise"
-              className="group flex flex-col items-center justify-center p-6 rounded-xl hover:bg-scode-blue/10 transition-colors w-full max-w-md text-center"
+              className="group flex flex-col items-center justify-center p-6 rounded-xl bg-scode-blue/20 hover:bg-scode-blue/30 transition-colors w-full max-w-md text-center"
             >
               <div className="w-16 h-16 bg-scode-blue/20 rounded-full flex items-center justify-center mb-4 group-hover:bg-scode-blue/30 transition-colors">
                 <QrCode className="w-8 h-8 text-scode-blue" />
