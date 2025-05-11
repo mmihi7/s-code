@@ -48,24 +48,26 @@ const IsometricPremises = () => {
       />
       <PerspectiveCamera makeDefault position={[10, 10, 10]} />
 
-      <group ref={groupRef}>
+      <group ref={groupRef} scale={1.2}>
         {/* Ground */}
         <mesh receiveShadow position={[0, -0.5, 0]}>
-          <boxGeometry args={[20, 1, 20]} />
+          <boxGeometry args={[24, 1, 24]} />
           <meshStandardMaterial color={colors.ground} />
         </mesh>
 
         {/* Main Building */}
-        <Building position={[0, 2, 0]} scale={[3, 4, 3]} color={colors.building} />
+        <Building position={[0, 2, 0]} scale={[3.5, 4, 3.5]} color={colors.building} />
         
-        {/* Secondary Buildings */}
-        <Building position={[-6, 1.5, -3]} scale={[2, 3, 2]} color={colors.building} />
-        <Building position={[5, 1, -4]} scale={[1.5, 2, 1.5]} color={colors.building} />
+        {/* Secondary Buildings - spreading them out more */}
+        <Building position={[-8, 1.5, -3]} scale={[2.5, 3, 2.5]} color={colors.building} />
+        <Building position={[7, 1, -5]} scale={[2, 2.5, 2]} color={colors.building} />
+        <Building position={[-4, 1.2, 6]} scale={[1.8, 2, 1.8]} color={colors.building} />
         
-        {/* Moving People */}
-        <Person position={[2, 0, 3]} color={colors.person1} moveTo={[-3, 0, 3]} speed={1} />
-        <Person position={[-4, 0, -2]} color={colors.person2} moveTo={[3, 0, -3]} speed={0.7} />
-        <Person position={[0, 0, 4]} color={colors.highlight} moveTo={[0, 0, -4]} speed={1.3} />
+        {/* Moving People - wider movement paths */}
+        <Person position={[3, 0, 4]} color={colors.person1} moveTo={[-5, 0, 4]} speed={1} />
+        <Person position={[-5, 0, -3]} color={colors.person2} moveTo={[5, 0, -4]} speed={0.7} />
+        <Person position={[0, 0, 6]} color={colors.highlight} moveTo={[0, 0, -6]} speed={1.3} />
+        <Person position={[6, 0, -1]} color={colors.person1} moveTo={[-4, 0, -2]} speed={0.9} />
       </group>
 
       <OrbitControls
@@ -143,7 +145,7 @@ const Person = ({ position, color, moveTo, speed }: PersonProps) => {
   return (
     <group ref={ref} position={position}>
       <mesh castShadow>
-        <capsuleGeometry args={[0.2, 0.7, 4, 8]} />
+        <capsuleGeometry args={[0.25, 0.8, 4, 8]} />
         <meshStandardMaterial color={color} />
       </mesh>
     </group>
