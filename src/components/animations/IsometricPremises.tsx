@@ -48,26 +48,31 @@ const IsometricPremises = () => {
       />
       <PerspectiveCamera makeDefault position={[10, 10, 10]} />
 
-      <group ref={groupRef} scale={1.2}>
-        {/* Ground */}
+      <group ref={groupRef} scale={1.5}>
+        {/* Ground - wider area */}
         <mesh receiveShadow position={[0, -0.5, 0]}>
-          <boxGeometry args={[24, 1, 24]} />
+          <boxGeometry args={[30, 1, 30]} />
           <meshStandardMaterial color={colors.ground} />
         </mesh>
 
-        {/* Main Building */}
-        <Building position={[0, 2, 0]} scale={[3.5, 4, 3.5]} color={colors.building} />
+        {/* Main Building - larger */}
+        <Building position={[0, 2.5, 0]} scale={[4, 5, 4]} color={colors.building} />
         
-        {/* Secondary Buildings - spreading them out more */}
-        <Building position={[-8, 1.5, -3]} scale={[2.5, 3, 2.5]} color={colors.building} />
-        <Building position={[7, 1, -5]} scale={[2, 2.5, 2]} color={colors.building} />
-        <Building position={[-4, 1.2, 6]} scale={[1.8, 2, 1.8]} color={colors.building} />
+        {/* Secondary Buildings - more spread out */}
+        <Building position={[-10, 1.8, -4]} scale={[3, 3.5, 3]} color={colors.building} />
+        <Building position={[9, 1.2, -6]} scale={[2.5, 3, 2.5]} color={colors.building} />
+        <Building position={[-6, 1.5, 8]} scale={[2, 2.5, 2]} color={colors.building} />
+        <Building position={[7, 1, 5]} scale={[2.2, 2.8, 2.2]} color={colors.building} />
+        <Building position={[-3, 0.8, -8]} scale={[1.5, 2, 1.5]} color={colors.building} />
         
-        {/* Moving People - wider movement paths */}
-        <Person position={[3, 0, 4]} color={colors.person1} moveTo={[-5, 0, 4]} speed={1} />
-        <Person position={[-5, 0, -3]} color={colors.person2} moveTo={[5, 0, -4]} speed={0.7} />
-        <Person position={[0, 0, 6]} color={colors.highlight} moveTo={[0, 0, -6]} speed={1.3} />
-        <Person position={[6, 0, -1]} color={colors.person1} moveTo={[-4, 0, -2]} speed={0.9} />
+        {/* Moving People - more people and wider paths */}
+        <Person position={[4, 0, 5]} color={colors.person1} moveTo={[-7, 0, 5]} speed={1} />
+        <Person position={[-6, 0, -4]} color={colors.person2} moveTo={[7, 0, -5]} speed={0.7} />
+        <Person position={[0, 0, 8]} color={colors.highlight} moveTo={[0, 0, -9]} speed={1.3} />
+        <Person position={[8, 0, -2]} color={colors.person1} moveTo={[-6, 0, -3]} speed={0.9} />
+        <Person position={[-5, 0, 6]} color={colors.person2} moveTo={[6, 0, 8]} speed={1.1} />
+        <Person position={[9, 0, 3]} color={colors.person1} moveTo={[-8, 0, 1]} speed={0.8} />
+        <Person position={[-3, 0, -7]} color={colors.highlight} moveTo={[5, 0, -7]} speed={1.2} />
       </group>
 
       <OrbitControls
@@ -145,7 +150,7 @@ const Person = ({ position, color, moveTo, speed }: PersonProps) => {
   return (
     <group ref={ref} position={position}>
       <mesh castShadow>
-        <capsuleGeometry args={[0.25, 0.8, 4, 8]} />
+        <capsuleGeometry args={[0.3, 0.9, 4, 8]} />
         <meshStandardMaterial color={color} />
       </mesh>
     </group>

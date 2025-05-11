@@ -15,25 +15,25 @@ const Index = () => {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="text-center py-6 w-full"
+          className="text-center py-4 w-full"
         >
           <h1 className="text-4xl md:text-6xl font-bold mb-2 text-gradient">
             Code
           </h1>
-          <p className="text-lg md:text-xl text-white/80 mb-4">
+          <p className="text-lg md:text-xl text-white/80 mb-2">
             Paperless Visitor Management
           </p>
         </motion.div>
         
-        {/* Animation section - full width and wider */}
+        {/* Animation section - full width and taller */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3, duration: 0.6 }}
-          className="w-full flex-1 h-[250px] md:h-[350px] mb-8"
+          className="w-full flex-1 h-[300px] md:h-[400px] lg:h-[450px] mb-6"
         >
           <Canvas
-            camera={{ position: [8, 8, 8], fov: 60 }}
+            camera={{ position: [8, 8, 8], fov: 70 }}
             className="w-full h-full"
           >
             <IsometricPremises />
@@ -45,7 +45,7 @@ const Index = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6, duration: 0.5 }}
-          className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-6 mb-4"
+          className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-6 mb-2"
         >
           {/* Left column - Login */}
           <Link 
