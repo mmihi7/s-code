@@ -9,7 +9,7 @@ import IsometricPremises from "@/components/animations/IsometricPremises";
 const Index = () => {
   return (
     <MainLayout showNavigation={false}>
-      <div className="min-h-[calc(100vh-80px)] flex flex-col items-center p-4 md:p-6">
+      <div className="min-h-screen flex flex-col items-center justify-between p-4 md:p-6">
         {/* Top section with logo and tagline */}
         <motion.div 
           initial={{ opacity: 0, y: -20 }}
@@ -30,7 +30,7 @@ const Index = () => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3, duration: 0.6 }}
-          className="w-full h-[300px] md:h-[400px] mb-10"
+          className="w-full flex-1 h-[300px] md:h-[400px] mb-10"
         >
           <Canvas
             camera={{ position: [10, 10, 10], fov: 50 }}
@@ -45,7 +45,7 @@ const Index = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.6, duration: 0.5 }}
-          className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-6"
+          className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-6 mb-6"
         >
           {/* Left column - Login */}
           <Link 
