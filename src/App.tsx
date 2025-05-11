@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -11,6 +10,7 @@ import Dashboard from "./pages/Dashboard";
 import Settings from "./pages/Settings";
 import PremiseLogin from "./pages/PremiseLogin";
 import VisitorEntry from "./pages/VisitorEntry";
+import Upgrade from "./pages/Upgrade";
 
 const queryClient = new QueryClient();
 
@@ -26,7 +26,9 @@ const App = () => (
           <Route path="/register-premise" element={<RegisterPremise />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/settings" element={<Settings />} />
-          <Route path="/visitor/:premiseId" element={<VisitorEntry />} />
+          <Route path="/visitor/:premise_id" element={<VisitorEntry />} />
+          <Route path="/entry" element={<VisitorEntry />} /> {/* <-- This line enables QR codes pointing to /entry */}
+          <Route path="/upgrade" element={<Upgrade />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </TooltipProvider>

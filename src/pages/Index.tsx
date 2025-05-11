@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import MainLayout from "@/components/layout/MainLayout";
@@ -18,12 +17,23 @@ const Index = () => {
           className="text-center py-10 w-full"
         >
           <h1 className="text-4xl md:text-6xl font-bold mb-2 text-gradient">
-            S-Code
+            Code
           </h1>
           <p className="text-lg md:text-xl text-white/80">
-            Transform Visitor Management
+            Paperless Visitor Management
           </p>
         </motion.div>
+
+        {/* Premise Owner Login Button */}
+        <div className="w-full flex justify-center mb-4">
+          <Link
+            to="/premise-login"
+            className="px-6 py-2 rounded-lg bg-scode-blue text-white font-semibold hover:bg-scode-blue/90 transition-colors"
+            style={{ textDecoration: "none" }}
+          >
+            Premise Owner Login
+          </Link>
+        </div>
         
         {/* Main section with animation and registration link */}
         <motion.div
