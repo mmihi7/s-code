@@ -1,14 +1,15 @@
+
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import MainLayout from "@/components/layout/MainLayout";
-import { ArrowRight, QrCode } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Canvas } from "@react-three/fiber";
 import IsometricPremises from "@/components/animations/IsometricPremises";
 
 const Index = () => {
   return (
     <MainLayout showNavigation={false}>
-      <div className="min-h-[calc(100vh-80px)] flex flex-col items-center p-0">
+      <div className="min-h-[calc(100vh-80px)] flex flex-col items-center p-4 md:p-6">
         {/* Top section with logo and tagline */}
         <motion.div 
           initial={{ opacity: 0, y: -20 }}
@@ -19,58 +20,50 @@ const Index = () => {
           <h1 className="text-4xl md:text-6xl font-bold mb-2 text-gradient">
             Code
           </h1>
-          <p className="text-lg md:text-xl text-white/80">
+          <p className="text-lg md:text-xl text-white/80 mb-6">
             Paperless Visitor Management
           </p>
         </motion.div>
-
-        {/* Premise Owner Login Button */}
-        <div className="w-full flex justify-center mb-4">
-          <Link
-            to="/premise-login"
-            className="px-6 py-2 rounded-lg bg-scode-blue text-white font-semibold hover:bg-scode-blue/90 transition-colors"
-            style={{ textDecoration: "none" }}
-          >
-            Premise Owner Login
-          </Link>
-        </div>
         
-        {/* Main section with animation and registration link */}
+        {/* Animation section - full width */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.3, duration: 0.6 }}
-          className="w-full flex-1 grid md:grid-cols-2 gap-6 px-6"
+          className="w-full h-[300px] md:h-[400px] mb-10"
         >
-          {/* Left column - 3D Animation */}
-          <div className="bg-black/20 rounded-xl border border-white/10 overflow-hidden h-[400px] md:h-full flex items-center justify-center">
-            <Canvas
-              camera={{ position: [10, 10, 10], fov: 50 }}
-              className="w-full h-full"
-            >
-              <IsometricPremises />
-            </Canvas>
-          </div>
+          <Canvas
+            camera={{ position: [10, 10, 10], fov: 50 }}
+            className="w-full h-full"
+          >
+            <IsometricPremises />
+          </Canvas>
+        </motion.div>
+        
+        {/* Two columns for actions */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6, duration: 0.5 }}
+          className="w-full max-w-4xl grid grid-cols-1 md:grid-cols-2 gap-6"
+        >
+          {/* Left column - Login */}
+          <Link 
+            to="/premise-login"
+            className="group flex items-center justify-center p-6 rounded-xl hover:bg-scode-blue/10 transition-colors w-full text-center"
+          >
+            <span className="text-lg font-semibold text-white mr-2">Login</span>
+            <ArrowRight className="w-5 h-5 text-scode-blue group-hover:translate-x-1 transition-transform" />
+          </Link>
           
-          {/* Right column - Registration Link */}
-          <div className="flex justify-center items-center">
-            <Link 
-              to="/register-premise"
-              className="group flex flex-col items-center justify-center p-6 rounded-xl hover:bg-scode-blue/10 transition-colors w-full max-w-md text-center"
-            >
-              <div className="w-16 h-16 bg-scode-blue/20 rounded-full flex items-center justify-center mb-4 group-hover:bg-scode-blue/30 transition-colors">
-                <QrCode className="w-8 h-8 text-scode-blue" />
-              </div>
-              
-              <span className="text-lg font-semibold text-white mb-4 hover:text-white/90 transition-colors">
-                Register Your Premise
-              </span>
-              
-              <div className="flex items-center text-white/60 hover:text-white transition-colors">
-                Get Started <ArrowRight className="ml-2 w-5 h-5" />
-              </div>
-            </Link>
-          </div>
+          {/* Right column - Get Started */}
+          <Link 
+            to="/register-premise"
+            className="group flex items-center justify-center p-6 rounded-xl hover:bg-scode-blue/10 transition-colors w-full text-center"
+          >
+            <span className="text-lg font-semibold text-white mr-2">Get Started</span>
+            <ArrowRight className="w-5 h-5 text-scode-blue group-hover:translate-x-1 transition-transform" />
+          </Link>
         </motion.div>
       </div>
     </MainLayout>
