@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Check, LogIn } from "lucide-react";
+import { Check, LogIn, AlertTriangle } from "lucide-react";
 import { supabase } from "@/lib/supabaseClient";
 import sha256 from "crypto-js/sha256";
 
@@ -290,7 +290,7 @@ const VisitorEntry = () => {
     setFormData({ ...formData, [fieldName]: value });
   };
 
-  // --- UPDATED handleSubmit to upload images to storage and store URLs ---
+  // --- UPDATED handleSubmit with better error handling ---
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
@@ -370,9 +370,16 @@ const VisitorEntry = () => {
 
       const { data, error } = result;
 
-      if (error || !data || !data[0]) {
-        setError("Check-in failed: " + (error?.message || "Unknown error"));
+      if (error) {
+        // Check specifically for RLS policy error
+        if (error.message?.includes("row-level security") || error.message?.includes("violates row level security policy")) {
+          setError("Check-in failed: You don't have permission to check in at this premise. Please contact the premise administrator.");
+        } else {
+          setError("Check-in failed: " + (error?.message || "Unknown error"));
+        }
         console.error("Supabase insert error:", error);
+      } else if (!data || !data[0]) {
+        setError("Check-in failed: No data returned from the server.");
       } else {
         setJustInsertedVisitorId(data[0].id);
         setRegistrationComplete(true);
@@ -380,7 +387,8 @@ const VisitorEntry = () => {
         setPendingApproval(true);
       }
     } catch (err) {
-      setError("An unexpected error occurred.");
+      setError("An unexpected error occurred. Please try again later.");
+      console.error("Check-in error:", err);
     } finally {
       setSubmitting(false);
     }
@@ -833,19 +841,23 @@ const VisitorEntry = () => {
           <CardHeader>
             <CardTitle className="text-2xl text-center">Visitor Check-In</CardTitle>
             <CardDescription className="text-center">
-              Welcome to {premise.name}! Please fill in your details to check in.
+              Welcome to {premise?.name}! Please fill in your details to check in.
             </CardDescription>
           </CardHeader>
           <form onSubmit={handleSubmit}>
             <CardContent>
               {error && (
-                <div className="text-red-500 text-center mb-4">{error}</div>
+                <div className="bg-red-500/10 border border-red-500/50 rounded-md p-4 mb-4 text-red-500 flex items-start">
+                  <AlertTriangle className="w-5 h-5 mr-2 flex-shrink-0 mt-0.5" />
+                  <span>{error}</span>
+                </div>
               )}
               {visitorFields.length === 0 && (
-                <div className="text-red-500 text-center mb-4">
+                <div className="bg-yellow-500/10 border border-yellow-500/50 rounded-md p-4 mb-4 text-yellow-500">
                   No visitor fields configured for this premise.
                 </div>
               )}
+              
               {visitorFields.map((field: any, idx: number) => {
                 if (field.name === "signature") return null; // Do not render digital signature input!
                 const config = fieldConfig[field.name] || { label: field.label || field.name, placeholder: "", type: "text" };
