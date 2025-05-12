@@ -31,8 +31,14 @@ const RegisterPremise = () => {
     email: "",
     phone: "",
     adminName: "",
-    terms: false,
-    promoConsent: false, // new consent (optional)
+    password: "",
+    confirmPassword: "",
+    terms: false
+  });
+
+  const [formErrors, setFormErrors] = useState({
+    password: "",
+    confirmPassword: ""
   });
 
   // Handle form field changes
@@ -40,78 +46,111 @@ const RegisterPremise = () => {
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { id, value } = e.target;
-    if (
-      e.target instanceof HTMLInputElement &&
-      e.target.type === "checkbox"
-    ) {
-      setForm((prev) => ({
+    
+    // Handle checkbox inputs
+    if (id === 'terms') {
+      const target = e.target as HTMLInputElement;
+      setForm(prev => ({
         ...prev,
-        [id]: (e.target as HTMLInputElement).checked,
+        [id]: target.checked
       }));
-    } else {
-      setForm((prev) => ({
+      return;
+    }
+
+    // Handle other inputs
+    setForm(prev => ({
+      ...prev,
+      [id]: value
+    }));
+
+    // Clear errors when typing in password fields
+    if (id === 'password' || id === 'confirmPassword') {
+      setFormErrors(prev => ({
         ...prev,
-        [id]: value,
+        [id]: ''
       }));
     }
+  };
+
+  const validateForm = () => {
+    const errors = {
+      password: "",
+      confirmPassword: ""
+    };
+
+    if (form.password.length < 8) {
+      errors.password = "Password must be at least 8 characters";
+    }
+
+    if (form.password !== form.confirmPassword) {
+      errors.confirmPassword = "Passwords do not match";
+    }
+
+    setFormErrors(errors);
+    return !errors.password && !errors.confirmPassword;
   };
 
   // Handle form submit
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.terms) {
-      toast({
-        title: "Agreement required",
-        description: "You must agree to the terms before registering.",
-        variant: "destructive",
-      });
-      return;
-    }
     setLoading(true);
 
-    // Generate the custom premise_id
-    const customPremiseId = generatePremiseId();
+    if (!validateForm()) {
+      setLoading(false);
+      return;
+    }
 
-    // Map form fields to Supabase column names as needed
-    const premiseData = {
-      id: customPremiseId, // <-- Use your generated ID here
-      name: form.companyName,
-      business_type: form.businessType,
-      address: form.address,
-      email: form.email,
-      phone: form.phone,
-      admin_name: form.adminName,
-      // promoConsent is not sent to Supabase unless you want to store it
-    };
+    try {
+      // 1. Create auth user with Supabase
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: form.email,
+        password: form.password,
+        options: {
+          data: {
+            full_name: form.adminName,
+            company: form.companyName
+          }
+        }
+      });
 
-    // Insert and get the new premise ID
-    const { data, error } = await supabase
-      .from("premises")
-      .insert([premiseData])
-      .select("id")
-      .single();
+      if (authError) throw authError;
 
-    setLoading(false);
+      // 2. Create premise record
+      const premiseId = generatePremiseId();
+      const { data, error } = await supabase.from("premises").insert([
+        {
+          id: premiseId,
+          name: form.companyName,
+          business_type: form.businessType,
+          address: form.address,
+          email: form.email,
+          phone: form.phone,
+          admin_name: form.adminName,
+          owner_id: authData.user?.id
+        },
+      ]).select().single();
 
-    if (error) {
+      if (error) throw error;
+
+      // Store the premise_id for dashboard
+      if (data?.id) {
+        localStorage.setItem("premise_id", data.id);
+      }
+
+      setRegistrationComplete(true);
+      toast({
+        title: "Registration successful",
+        description: "Please check your email to verify your account.",
+      });
+    } catch (error: any) {
       toast({
         title: "Registration failed",
         description: error.message,
         variant: "destructive",
       });
-      return;
+      // Reset loading state immediately on error
+      setLoading(false);
     }
-
-    // Store the new premise_id in localStorage for the dashboard to use
-    if (data && data.id) {
-      localStorage.setItem("premise_id", data.id);
-    }
-
-    setRegistrationComplete(true);
-    toast({
-      title: "Premise registration successful",
-      description: "Your premise has been registered successfully.",
-    });
   };
 
   const navigateToDashboard = () => {
@@ -222,30 +261,51 @@ const RegisterPremise = () => {
                         onChange={handleChange}
                       />
                     </div>
-                    {/* Consents */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label htmlFor="password" className="text-sm text-white/70">Password*</label>
+                        <Input
+                          id="password"
+                          type="password"
+                          required
+                          placeholder="Enter password"
+                          className="bg-background border-white/20"
+                          value={form.password}
+                          onChange={handleChange}
+                        />
+                        {formErrors.password && (
+                          <p className="text-sm text-red-500">{formErrors.password}</p>
+                        )}
+                      </div>
+                      <div className="space-y-2">
+                        <label htmlFor="confirmPassword" className="text-sm text-white/70">Confirm Password*</label>
+                        <Input
+                          id="confirmPassword"
+                          type="password"
+                          required
+                          placeholder="Confirm password"
+                          className="bg-background border-white/20"
+                          value={form.confirmPassword}
+                          onChange={handleChange}
+                        />
+                        {formErrors.confirmPassword && (
+                          <p className="text-sm text-red-500">{formErrors.confirmPassword}</p>
+                        )}
+                      </div>
+                    </div>
+                    {/* Terms and Conditions */}
                     <div className="pt-4">
                       <div className="flex items-start space-x-2">
                         <Checkbox
                           id="terms"
                           checked={form.terms}
-                          onCheckedChange={(checked) => setForm((prev) => ({ ...prev, terms: !!checked }))}
+                          onCheckedChange={(checked) => 
+                            setForm(prev => ({ ...prev, terms: checked as boolean }))
+                          }
                           required
                         />
-                        <label htmlFor="terms" className="text-sm leading-tight">
-                          I agree to the <Link to="#" className="text-scode-blue hover:underline">Terms of Service</Link>, <Link to="#" className="text-scode-blue hover:underline">Privacy Policy</Link>, and consent to processing visitor data in accordance with applicable laws
-                        </label>
-                      </div>
-                      <div className="flex items-start space-x-2 mt-2">
-                        <Checkbox
-                          id="promoConsent"
-                          checked={form.promoConsent}
-                          onCheckedChange={(checked) => setForm((prev) => ({
-                            ...prev,
-                            promoConsent: !!checked,
-                          }))}
-                        />
-                        <label htmlFor="promoConsent" className="text-sm leading-tight">
-                          I do not consent to receiving promotional materials from partner organizations.
+                        <label htmlFor="terms" className="text-sm text-white/70">
+                          I agree to the Terms and Conditions*
                         </label>
                       </div>
                     </div>

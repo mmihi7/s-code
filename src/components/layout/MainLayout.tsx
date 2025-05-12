@@ -22,9 +22,13 @@ const MainLayout: React.FC<MainLayoutProps> = ({
         <header className="w-full py-4 px-6 bg-black/30 backdrop-blur-sm border-b border-white/10">
           <nav className="max-w-7xl mx-auto flex justify-between items-center">
             <Link to="/" className="flex items-center space-x-2">
-              <span className="text-xl font-bold text-gradient">S-CODE</span>
+              <span className="text-xl font-bold text-gradient">CODE</span>
             </Link>
-            
+            {premiseName && (
+              <div className="text-sm text-white/80">
+                <span>{premiseName}</span>
+              </div>
+            )}
             {/* Only show these links if NOT logged in and NOT on dashboard */}
             {!isLoggedIn && !isDashboard && (
               <div className="flex items-center space-x-4">
@@ -42,7 +46,6 @@ const MainLayout: React.FC<MainLayoutProps> = ({
                 </Link>
               </div>
             )}
-            
             {/* If logged in, show different navigation options */}
             {isLoggedIn && (
               <div className="flex items-center space-x-4">
@@ -73,7 +76,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
       
       <footer className="w-full py-6 px-6 border-t border-white/10 bg-black/30">
         <div className="max-w-7xl mx-auto text-center text-white/60 text-sm">
-          <p>© {new Date().getFullYear()} S-Code Africa</p>
+          <p> {new Date().getFullYear()} S-Code Africa</p>
         </div>
       </footer>
     </div>

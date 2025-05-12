@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
@@ -7,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Building, LogIn, ArrowLeft } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/lib/supabaseClient";
 
 const PremiseLogin = () => {
   const [email, setEmail] = useState("");
@@ -20,28 +20,47 @@ const PremiseLogin = () => {
     setIsLoggingIn(true);
     
     try {
-      // Simulate login process
-      // In a real app, this would be an API call to authenticate
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Authenticate with Supabase
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (authError) throw authError;
+
+      // Get premise details to verify ownership
+      const { data: premiseData, error: premiseError } = await supabase
+        .from('premises')
+        .select('*')
+        .eq('owner_id', authData.user.id)
+        .single();
+
+      if (premiseError) throw premiseError;
+
+      // Update last login time and set premise metadata in auth
+      await supabase
+        .from('premises')
+        .update({ last_login: new Date().toISOString() })
+        .eq('id', premiseData.id);
+
+      // Set premise data in auth metadata
+      await supabase.auth.updateUser({
+        data: {
+          premise_id: premiseData.id,
+          premise_name: premiseData.name
+        }
+      });
+
+      toast({
+        title: "Login successful",
+        description: `Welcome back to ${premiseData.name}!`
+      });
       
-      // For demo, any non-empty credentials will work
-      if (email.trim() && password.trim()) {
-        toast({
-          title: "Premise login successful",
-          description: "Welcome back to your S-Code dashboard!"
-        });
-        navigate("/dashboard");
-      } else {
-        toast({
-          title: "Login failed",
-          description: "Please check your credentials and try again.",
-          variant: "destructive"
-        });
-      }
-    } catch (error) {
+      navigate("/dashboard");
+    } catch (error: any) {
       toast({
         title: "Login failed",
-        description: "An error occurred during login.",
+        description: error.message || "An error occurred during login.",
         variant: "destructive"
       });
     } finally {
