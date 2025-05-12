@@ -43,6 +43,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/components/ui/use-toast";
+import FormConfiguration from '@/components/FormConfiguration';
 
 // Types
 interface VisitorField {
@@ -1126,6 +1127,11 @@ const Dashboard = () => {
       </Card>
     );
   };
+
+  const [activeTab, setActiveTab] = useState("visitors");
+  const [activePremise, setActivePremise] = useState(null);
+  const [isPremiumAccount, setIsPremiumAccount] = useState(false);
+  const [showUpgradeDialog, setShowUpgradeDialog] = useState(false);
 
   return (
     <MainLayout>
