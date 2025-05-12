@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
@@ -121,6 +122,9 @@ const PhotoInput: React.FC<PhotoInputProps> = ({ value, onChange }) => {
   );
 };
 
+// Define visitor status type
+type VisitorStatus = 'pending' | 'approved' | 'denied' | null;
+
 const VisitorEntry = () => {
   const location = useLocation();
   const query = new URLSearchParams(location.search);
@@ -132,7 +136,7 @@ const VisitorEntry = () => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [visitorId, setVisitorId] = useState<string | null>(null);
-  const [visitorStatus, setVisitorStatus] = useState<'pending' | 'approved' | 'denied' | null>(null);
+  const [visitorStatus, setVisitorStatus] = useState<VisitorStatus>(null);
   const [denialReason, setDenialReason] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -189,7 +193,7 @@ const VisitorEntry = () => {
         // Parse form fields
         const fields = Array.isArray(qrConfig.form_fields) 
           ? qrConfig.form_fields 
-          : JSON.parse(qrConfig.form_fields);
+          : JSON.parse(qrConfig.form_fields as string);
 
         console.log('Parsed form fields:', fields);
         setPremiseFields(fields);
@@ -215,20 +219,21 @@ const VisitorEntry = () => {
             });
           }
 
-          const { data: profile } = await supabase
-            .from('profiles')
+          // Since 'profiles' table doesn't exist, get data directly from registered_users or users table
+          const { data: userData } = await supabase
+            .from('registered_users')
             .select('*')
-            .eq('id', session.user.id)
-            .single();
+            .eq('auth_user_id', session.user.id)
+            .maybeSingle();
 
-          if (profile) {
-            // Map profile data to form fields
+          if (userData) {
+            // Map user data to form fields
             const profileData = {
-              name: profile.full_name || '',
-              phone: profile.phone || '',
-              idnumber: profile.idnumber || '',
-              email: profile.email || session.user.email || '',
-              photo: profile.photo || '',
+              name: userData.name || '',
+              phone: userData.phone || '',
+              idnumber: userData.idnumber || '',
+              email: userData.email || session.user.email || '',
+              photo: userData.facephoto || '',
               // Add any other standard profile fields here
             };
 
@@ -299,7 +304,9 @@ const VisitorEntry = () => {
         }
 
         if (data) {
-          setVisitorStatus(data.status);
+          // Type assertion to ensure we're setting a valid status
+          const newStatus = data.status as VisitorStatus;
+          setVisitorStatus(newStatus);
           if (data.message) {
             toast({
               title: data.status === 'approved' ? "Entry Approved" : "Status Update",
@@ -322,7 +329,7 @@ const VisitorEntry = () => {
         clearInterval(statusCheckInterval);
       }
     };
-  }, [visitorId, visitorStatus, supabase]);
+  }, [visitorId, visitorStatus, toast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -367,7 +374,7 @@ const VisitorEntry = () => {
       }
 
       // Create the entry object based on form data
-      const entryData = {
+      const entryData: Record<string, any> = {
         premise_id: premise_id,
         name: formData.name?.trim(),
         phone: formData.phone?.trim(),
@@ -391,7 +398,7 @@ const VisitorEntry = () => {
 
       // Create the entry as pending
       const { data: pendingEntry, error: pendingError } = await supabase
-        .from('entries')
+        .from('pending_entries')
         .insert([entryData])
         .select()
         .single();
@@ -448,17 +455,17 @@ const VisitorEntry = () => {
         description: "We've sent you a magic link to complete your account setup.",
       });
 
-      // Save the visitor details to profiles table
-      const { error: profileError } = await supabase
-        .from('profiles')
+      // Save the visitor details to registered_users table instead of profiles
+      const { error: userError } = await supabase
+        .from('registered_users')
         .insert([{
-          full_name: formData.name,
+          name: formData.name,
           email: email,
           phone: formData.phone,
           created_at: new Date().toISOString(),
         }]);
 
-      if (profileError) throw profileError;
+      if (userError) throw userError;
 
     } catch (error: any) {
       console.error('Error:', error);

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
@@ -9,9 +8,18 @@ import { Camera, QrCode, History, MapPin, Clock, ChevronRight, X } from "lucide-
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client"; 
 
+// Define the correct type for visit history items
+interface VisitHistoryItem {
+  id: string | number; // Allow both string and number types for id
+  premiseName: string;
+  location: string;
+  date: string;
+  time: string;
+}
+
 const UserDashboard = () => {
   const [showScanDialog, setShowScanDialog] = useState(true);
-  const [visitHistory, setVisitHistory] = useState([
+  const [visitHistory, setVisitHistory] = useState<VisitHistoryItem[]>([
     {
       id: 1,
       premiseName: "ABC Office Building",
@@ -56,7 +64,7 @@ const UserDashboard = () => {
           if (error) throw error;
           
           if (data && data.length > 0) {
-            const processedVisits = data.map(visit => {
+            const processedVisits: VisitHistoryItem[] = data.map(visit => {
               const date = new Date(visit.checked_in_at);
               return {
                 id: visit.id,
