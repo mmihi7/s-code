@@ -44,6 +44,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { toast } from "@/components/ui/use-toast";
 import { VisitorField, getDefaultFormFields } from "@/services/FormConfigurationService";
+import { Json } from "@/integrations/supabase/types";
 
 // Define additional types needed for the Dashboard
 interface Visitor {
@@ -469,11 +470,16 @@ const Dashboard = () => {
       if (qrConfig?.form_fields) {
         try {
           // Use type assertion and ensure it's an array
-          const fieldsData = (
-            typeof qrConfig.form_fields === 'string' 
-              ? JSON.parse(qrConfig.form_fields) 
-              : qrConfig.form_fields
-          ) as VisitorField[];
+          let fieldsData: VisitorField[];
+          
+          if (typeof qrConfig.form_fields === 'string') {
+            fieldsData = JSON.parse(qrConfig.form_fields as string) as VisitorField[];
+          } else if (Array.isArray(qrConfig.form_fields)) {
+            fieldsData = qrConfig.form_fields as unknown as VisitorField[];
+          } else {
+            console.error('Unexpected form fields format:', qrConfig.form_fields);
+            fieldsData = getDefaultFormFields();
+          }
           
           setVisitorFields(Array.isArray(fieldsData) ? fieldsData : getDefaultFormFields());
           setIteration(qrConfig.iteration || 1);
@@ -527,9 +533,17 @@ const Dashboard = () => {
     if (qrConfig?.form_fields) {
       try {
         // Handle both string and object formats
-        const parsedFields = typeof qrConfig.form_fields === 'string'
-          ? JSON.parse(qrConfig.form_fields)
-          : qrConfig.form_fields;
+        let parsedFields: VisitorField[];
+        
+        if (typeof qrConfig.form_fields === 'string') {
+          parsedFields = JSON.parse(qrConfig.form_fields) as VisitorField[];
+        } else if (Array.isArray(qrConfig.form_fields)) {
+          parsedFields = qrConfig.form_fields as unknown as VisitorField[];
+        } else {
+          console.error('Invalid form fields format:', qrConfig.form_fields);
+          setVisitorFields(getDefaultFormFields());
+          return;
+        }
 
         if (Array.isArray(parsedFields)) {
           // Ensure all default fields exist with their required properties
@@ -641,11 +655,11 @@ const Dashboard = () => {
       if (pendingError) throw pendingError;
 
       // Combine both sets of data with proper typing
-      const typedApprovedVisitors = approvedVisitors ? approvedVisitors as Visitor[] : [];
+      const typedApprovedVisitors = approvedVisitors ? approvedVisitors as unknown as Visitor[] : [];
       const typedPendingEntries = pendingEntries ? pendingEntries.map(entry => ({
         ...entry,
         isPending: true
-      } as Visitor)) : [];
+      } as unknown as Visitor)) : [];
 
       const allVisitors = [
         ...typedPendingEntries,
@@ -710,10 +724,18 @@ const Dashboard = () => {
         if (qrConfig?.form_fields) {
           try {
             // Handle both string and object formats
-            const parsedFields = typeof qrConfig.form_fields === 'string'
-              ? JSON.parse(qrConfig.form_fields)
-              : qrConfig.form_fields;
-              
+            let parsedFields: VisitorField[];
+            
+            if (typeof qrConfig.form_fields === 'string') {
+              parsedFields = JSON.parse(qrConfig.form_fields) as VisitorField[];
+            } else if (Array.isArray(qrConfig.form_fields)) {
+              parsedFields = qrConfig.form_fields as unknown as VisitorField[];
+            } else {
+              console.error('Invalid form fields format:', qrConfig.form_fields);
+              setVisitorFields(getDefaultFormFields());
+              return;
+            }
+            
             if (Array.isArray(parsedFields)) {
               // Ensure all default fields exist with their required properties
               const mergedFields: VisitorField[] = getDefaultFormFields().map(defaultField => {
@@ -994,29 +1016,98 @@ const Dashboard = () => {
       const now = new Date().toISOString();
 
       // Create a new visitor record
+      const newVisitorData: any = {
+        premise_id: pendingEntry.premise_id,
+        name: pendingEntry.name,
+        phone: pendingEntry.phone,
+        idnumber: pendingEntry.idnumber,
+        email: pendingEntry.email,
+        checked_in_at: now,
+        entry_approved_at: now,
+        signature: pendingEntry.signature,
+        purpose: pendingEntry.purpose,
+        department: pendingEntry.department,
+        visitingperson: pendingEntry.visitingperson,
+        vehicle: pendingEntry.vehicle,
+        status: 'approved',
+        visitor_data: {},
+        authenticated: pendingEntry.authenticated || false,
+        user_id: pendingEntry.user_id
+      };
+
+      // Add optional fields if they exist
+      if (pendingEntry.facephoto) newVisitorData.facephoto = pendingEntry.facephoto;
+      if (pendingEntry.idphoto_front) newVisitorData.idphoto_front = pendingEntry.idphoto_front;
+      if (pendingEntry.idphoto_back) newVisitorData.idphoto_back = pendingEntry.idphoto_back;
+
       const { data: newVisitor, error: insertError } = await supabase
         .from('visitors')
-        .insert({
-          premise_id: pendingEntry.premise_id,
-          name: pendingEntry.name,
-          phone: pendingEntry.phone,
-          idnumber: pendingEntry.idnumber,
-          email: pendingEntry.email,
-          checked_in_at: now,
-          entry_approved_at: now,
-          signature: pendingEntry.signature,
-          // Handle optional fields that may not exist in the pendingEntry
-          ...(pendingEntry.facephoto ? { facephoto: pendingEntry.facephoto } : {}),
-          ...(pendingEntry.idphoto_front ? { idphoto_front: pendingEntry.idphoto_front } : {}),
-          ...(pendingEntry.idphoto_back ? { idphoto_back: pendingEntry.idphoto_back } : {}),
-          purpose: pendingEntry.purpose,
-          department: pendingEntry.department,
-          visitingperson: pendingEntry.visitingperson,
-          vehicle: pendingEntry.vehicle,
-          status: 'approved',
-          // Set visitor_data as an empty object if not provided
-          visitor_data: pendingEntry.visitor_data || {},
-          authenticated: pendingEntry.authenticated || false,
-          user_id: pendingEntry.user_id,
-          // Handle optional field that may not exist
-          ...(pendingEntry
+        .insert(newVisitorData);
+
+      if (insertError) throw insertError;
+
+      // Delete the pending entry
+      const { error: deleteError } = await supabase
+        .from('pending_entries')
+        .delete()
+        .eq('id', entryId);
+
+      if (deleteError) throw deleteError;
+
+      // Refresh the visitor list
+      fetchVisitors();
+
+      toast({
+        title: "Entry Approved",
+        description: "Visitor entry has been approved",
+      });
+    } catch (error: any) {
+      console.error("Error approving entry:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to approve visitor entry",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Deny entry for a visitor
+  const handleDenyEntry = async (entryId: string, reason: string = "Entry denied by admin") => {
+    try {
+      // Update the pending entry
+      const { error: updateError } = await supabase
+        .from('pending_entries')
+        .update({
+          status: 'denied',
+          denial_reason: reason,
+          processed_at: new Date().toISOString()
+        })
+        .eq('id', entryId);
+
+      if (updateError) throw updateError;
+
+      // Refresh the visitor list
+      fetchVisitors();
+
+      toast({
+        title: "Entry Denied",
+        description: "Visitor entry has been denied",
+      });
+    } catch (error: any) {
+      console.error("Error denying entry:", error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to deny visitor entry",
+        variant: "destructive"
+      });
+    }
+  };
+
+  return (
+    <MainLayout>
+      {/* ... keep existing code for rendering the dashboard UI */}
+    </MainLayout>
+  );
+};
+
+export default Dashboard;

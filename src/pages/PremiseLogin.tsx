@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
@@ -37,10 +38,7 @@ const PremiseLogin = () => {
 
       if (premiseError) throw premiseError;
 
-      // Update timestamps and metadata in custom table instead of using direct update
-      // We could create a separate function for tracking logins if needed
-      
-      // Set premise data in auth metadata
+      // Update timestamps and metadata in auth metadata
       await supabase.auth.updateUser({
         data: {
           premise_id: premiseData.id,

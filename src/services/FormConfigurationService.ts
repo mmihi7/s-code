@@ -1,5 +1,6 @@
 
 import { supabase } from "@/lib/supabaseClient";
+import { Json } from "@/integrations/supabase/types";
 
 // Define the visitor field type
 export interface VisitorField {
@@ -41,14 +42,36 @@ export async function loadFormConfiguration(premiseId: string): Promise<VisitorF
       return null;
     }
 
-    // Type assertion for form_fields
-    const formFields = qrConfig?.form_fields as VisitorField[] | undefined;
-    
-    if (!formFields || !Array.isArray(formFields)) {
+    if (!qrConfig?.form_fields) {
       return null;
     }
     
-    return formFields;
+    // Handle both string and object formats
+    let formFields: VisitorField[] = [];
+    
+    try {
+      // If it's a string, parse it
+      if (typeof qrConfig.form_fields === 'string') {
+        formFields = JSON.parse(qrConfig.form_fields) as VisitorField[];
+      } else if (Array.isArray(qrConfig.form_fields)) {
+        // If it's already an array, cast it
+        formFields = qrConfig.form_fields as unknown as VisitorField[];
+      } else {
+        console.error('Form fields is not in expected format:', qrConfig.form_fields);
+        return null;
+      }
+      
+      // Validate that it's an array of VisitorField objects
+      if (!Array.isArray(formFields)) {
+        console.error('Parsed form fields is not an array');
+        return null;
+      }
+      
+      return formFields;
+    } catch (parseError) {
+      console.error('Error parsing form_fields:', parseError);
+      return null;
+    }
   } catch (error) {
     console.error('Error in loadFormConfiguration:', error);
     return null;
