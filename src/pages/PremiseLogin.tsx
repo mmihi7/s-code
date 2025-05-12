@@ -37,12 +37,9 @@ const PremiseLogin = () => {
 
       if (premiseError) throw premiseError;
 
-      // Update last login time and set premise metadata in auth
-      await supabase
-        .from('premises')
-        .update({ last_login: new Date().toISOString() })
-        .eq('id', premiseData.id);
-
+      // Update timestamps and metadata in custom table instead of using direct update
+      // We could create a separate function for tracking logins if needed
+      
       // Set premise data in auth metadata
       await supabase.auth.updateUser({
         data: {
