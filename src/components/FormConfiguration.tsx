@@ -14,7 +14,8 @@ import {
   IdCard,
   Mail,
   Phone,
-  UserCheck
+  UserCheck,
+  Download
 } from "lucide-react";
 import { VisitorField } from '@/services/FormConfigurationService';
 import { useFormConfiguration } from '@/hooks/useFormConfiguration';
@@ -406,7 +407,7 @@ const FormConfiguration: React.FC<FormConfigurationProps> = ({
             <Card className="bg-secondary/50 border-white/10 flex flex-col items-center justify-center p-8 min-h-[360px]">
               <div className="text-center">
                 <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-white/5 flex items-center justify-center">
-                  <QRCode className="w-8 h-8 text-white/40" />
+                  <QRCode value="" className="w-8 h-8 text-white/40" />
                 </div>
                 <h3 className="text-xl font-semibold mb-2">No QR Code Generated</h3>
                 <p className="text-white/60 mb-6">Configure your form fields and generate a QR code</p>

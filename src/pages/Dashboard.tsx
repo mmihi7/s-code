@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
@@ -45,8 +46,38 @@ import { Label } from "@/components/ui/label";
 import { toast } from "@/components/ui/use-toast";
 import { VisitorField, getDefaultFormFields } from "@/services/FormConfigurationService";
 import { Json } from "@/integrations/supabase/types";
+import FormConfiguration from "@/components/FormConfiguration";
 
 // Define additional types needed for the Dashboard
+interface PendingEntry {
+  id: string;
+  name?: string;
+  phone?: string;
+  idnumber?: string;
+  email?: string;
+  premise_id?: string;
+  isPending: boolean;
+  requires_attention?: boolean;
+  attention_reason?: string;
+  department?: string;
+  purpose?: string;
+  visitingperson?: string;
+  vehicle?: string;
+  denial_reason?: string;
+  previous_visit_id?: string;
+  previous_entry_time?: string;
+  facephoto?: string;
+  idphoto_front?: string;
+  idphoto_back?: string;
+  status?: string;
+  submitted_at?: string;
+  message?: string;
+  deny_reason?: string;
+  processed_at?: string;
+  authenticated?: boolean;
+  user_id?: string;
+}
+
 interface Visitor {
   id: string;
   name?: string;
@@ -231,7 +262,7 @@ const Dashboard = () => {
   const [qrValue, setQrValue] = useState<string | null>(null);
   const [iteration, setIteration] = useState<number>(1);
   const [customQuestion, setCustomQuestion] = useState("");
-  const [visitors, setVisitors] = useState<Visitor[]>([]);
+  const [visitors, setVisitors] = useState<(Visitor | PendingEntry)[]>([]);
   const [generating, setGenerating] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -244,7 +275,7 @@ const Dashboard = () => {
   const [attentionModals, setAttentionModals] = useState<{
     [key: string]: {
       isOpen: boolean;
-      visitor: Visitor;
+      visitor: Visitor | PendingEntry;
       checkoutReason: string;
     }
   }>({});
@@ -403,7 +434,7 @@ const Dashboard = () => {
     }
   };
 
-  const handleVisitorApproval = async (visitor: Visitor) => {
+  const handleVisitorApproval = async (visitor: Visitor | PendingEntry) => {
     if (!visitor?.id) {
       toast({
         title: "Error",
@@ -457,41 +488,6 @@ const Dashboard = () => {
 
       // Set premise data directly from auth metadata
       setPremise({ id: premise_id, name: premise_name });
-
-      // Get visitor fields from premises or QR forms
-      const { data: qrConfig } = await supabase
-        .from('qrcode_forms')
-        .select('form_fields, iteration, qrcode_url')
-        .eq('premise_id', premise_id)
-        .order('iteration', { ascending: false })
-        .limit(1)
-        .single();
-
-      if (qrConfig?.form_fields) {
-        try {
-          // Use type assertion and ensure it's an array
-          let fieldsData: VisitorField[];
-          
-          if (typeof qrConfig.form_fields === 'string') {
-            fieldsData = JSON.parse(qrConfig.form_fields as string) as VisitorField[];
-          } else if (Array.isArray(qrConfig.form_fields)) {
-            fieldsData = qrConfig.form_fields as unknown as VisitorField[];
-          } else {
-            console.error('Unexpected form fields format:', qrConfig.form_fields);
-            fieldsData = getDefaultFormFields();
-          }
-          
-          setVisitorFields(Array.isArray(fieldsData) ? fieldsData : getDefaultFormFields());
-          setIteration(qrConfig.iteration || 1);
-          setQrValue(qrConfig.qrcode_url || null);
-          setQrGenerated(!!qrConfig.qrcode_url);
-        } catch {
-          setVisitorFields(getDefaultFormFields());
-        }
-      } else {
-        setVisitorFields(getDefaultFormFields());
-      }
-
       setIsLoading(false);
     };
 
@@ -655,11 +651,11 @@ const Dashboard = () => {
       if (pendingError) throw pendingError;
 
       // Combine both sets of data with proper typing
-      const typedApprovedVisitors = approvedVisitors ? approvedVisitors as unknown as Visitor[] : [];
+      const typedApprovedVisitors = approvedVisitors ? approvedVisitors as Visitor[] : [];
       const typedPendingEntries = pendingEntries ? pendingEntries.map(entry => ({
         ...entry,
         isPending: true
-      } as unknown as Visitor)) : [];
+      } as PendingEntry)) : [];
 
       const allVisitors = [
         ...typedPendingEntries,
@@ -668,7 +664,7 @@ const Dashboard = () => {
 
       // Check each pending entry for active visits
       for (const entry of allVisitors) {
-        if (entry.isPending && entry.idnumber) {
+        if ('isPending' in entry && entry.isPending && entry.idnumber) {
           const { data: activeVisit } = await supabase
             .from('visitors')
             .select('id, checked_in_at')
@@ -698,307 +694,9 @@ const Dashboard = () => {
     }
   };
 
-  // Load QR code form on mount
-  useEffect(() => {
-    const loadQRCodeForm = async () => {
-      if (!premise?.id) return;
-
-      try {
-        // Load latest QR code configuration
-        const { data: qrConfig, error: qrError } = await supabase
-          .from('qrcode_forms')
-          .select('form_fields, iteration, qrcode_url')
-          .eq('premise_id', premise.id)
-          .order('iteration', { ascending: false })
-          .limit(1)
-          .single();
-
-        if (qrError) {
-          console.error('QR Config error:', qrError);
-          setError("Failed to load QR code configuration");
-          setVisitorFields(getDefaultFormFields());
-          return;
-        }
-
-        // If we have existing configuration, use it
-        if (qrConfig?.form_fields) {
-          try {
-            // Handle both string and object formats
-            let parsedFields: VisitorField[];
-            
-            if (typeof qrConfig.form_fields === 'string') {
-              parsedFields = JSON.parse(qrConfig.form_fields) as VisitorField[];
-            } else if (Array.isArray(qrConfig.form_fields)) {
-              parsedFields = qrConfig.form_fields as unknown as VisitorField[];
-            } else {
-              console.error('Invalid form fields format:', qrConfig.form_fields);
-              setVisitorFields(getDefaultFormFields());
-              return;
-            }
-            
-            if (Array.isArray(parsedFields)) {
-              // Ensure all default fields exist with their required properties
-              const mergedFields: VisitorField[] = getDefaultFormFields().map(defaultField => {
-                const savedField = parsedFields.find((f: any) => f.name === defaultField.name);
-                // For core fields (name, idnumber, phone), maintain required and visible as true
-                if (['name', 'idnumber', 'phone'].includes(defaultField.name)) {
-                  return { ...defaultField, ...savedField, required: true, visible: true };
-                }
-                return savedField || defaultField;
-              });
-
-              setVisitorFields(mergedFields);
-              setIteration(qrConfig.iteration || 1);
-              setQrValue(qrConfig.qrcode_url || '');
-              setQrGenerated(!!qrConfig.qrcode_url);
-            } else {
-              console.error("Form fields is not an array:", parsedFields);
-              setVisitorFields(getDefaultFormFields());
-            }
-          } catch (err) {
-            console.error("Error parsing form fields:", err);
-            setVisitorFields(getDefaultFormFields());
-          }
-        } else {
-          // Use defaults for new setup
-          setVisitorFields(getDefaultFormFields());
-          setIteration(1);
-        }
-      } catch (error) {
-        console.error('Error loading configuration:', error);
-        setVisitorFields(getDefaultFormFields());
-      }
-    };
-
-    loadQRCodeForm();
-  }, [premise?.id]);
-
-  // Save field configuration
-  const saveFieldConfiguration = async (fields = visitorFields) => {
-    if (!premise?.id) {
-      toast({
-        title: "Error",
-        description: "No premise ID found",
-        variant: "destructive"
-      });
-      return false;
-    }
-
-    try {
-      setSaving(true);
-      // Prepare fields - ensure core fields remain required and visible
-      const cleanFields = fields.map(field => {
-        const isCore = ['name', 'idnumber', 'phone'].includes(field.name);
-        return {
-          id: field.id,
-          name: field.name,
-          label: field.label,
-          required: isCore ? true : field.required,
-          visible: isCore ? true : field.visible,
-          premium: field.premium,
-          custom: field.custom,
-          type: field.type
-        };
-      });
-
-      const newIteration = iteration + 1;
-      const qrUrl = `${window.location.origin}/entry?premise_id=${encodeURIComponent(premise.id)}&v=${newIteration}`;
-
-      // Save QR form with field configuration using upsert
-      const { error: qrError } = await supabase
-        .from('qrcode_forms')
-        .upsert({
-          premise_id: premise.id,
-          form_fields: cleanFields,
-          qrcode_url: qrUrl,
-          iteration: newIteration,
-          generated_at: new Date().toISOString()
-        });
-
-      if (qrError) {
-        console.error('QR form error:', qrError);
-        throw qrError;
-      }
-
-      setIteration(newIteration);
-      setQrValue(qrUrl);
-      setQrGenerated(true);
-      toast({
-        title: "Success",
-        description: "Form configuration saved successfully",
-      });
-
-      return true;
-    } catch (error: any) {
-      console.error('Save error:', error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to save form configuration",
-        variant: "destructive"
-      });
-      return false;
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  // Toggle field visibility
-  const handleToggleVisible = (id: number) => {
-    setVisitorFields(fields =>
-      fields.map(field =>
-        field.id === id
-          ? { ...field, visible: !field.visible, required: !field.visible ? false : field.required }
-          : field
-      )
-    );
-    // Reset QR code when fields change
-    setQrValue(null);
-    setQrGenerated(false);
-  };
-
-  // Toggle field required
-  const handleToggleRequired = (id: number) => {
-    setVisitorFields(fields =>
-      fields.map(field =>
-        field.id === id && field.visible
-          ? { ...field, required: !field.required }
-          : field
-      )
-    );
-    // Reset QR code when fields change
-    setQrValue(null);
-    setQrGenerated(false);
-  };
-
-  // Add custom field
-  const addCustomField = () => {
-    if (!customQuestion.trim()) return;
-    const newField = {
-      id: visitorFields.length + 1,
-      name: `custom_${Date.now()}`,
-      label: customQuestion.trim(),
-      required: false,
-      visible: true,
-      custom: true
-    };
-    setVisitorFields(prev => [...prev, newField]);
-    setCustomQuestion("");
-    // Reset QR code when fields change
-    setQrValue(null);
-    setQrGenerated(false);
-  };
-
-  // Generate QR code
-  const handleGenerateOrRegenerateQRCode = async () => {
-    try {
-      const saved = await saveFieldConfiguration();
-      if (!saved) {
-        toast({
-          title: "Error",
-          description: "Failed to save form configuration",
-          variant: "destructive"
-        });
-      }
-    } catch (error) {
-      console.error('Error:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update form configuration",
-        variant: "destructive"
-      });
-    }
-  };
-
   // Handle field updates
   const handleFieldUpdate = async (updatedFields: VisitorField[]) => {
     setVisitorFields(updatedFields);
-    // Reset QR state since fields changed
-    setQrValue(null);
-    setQrGenerated(false);
-    
-    // Save the changes
-    const saved = await saveFieldConfiguration(updatedFields);
-    if (!saved) {
-      toast({
-        title: "Error",
-        description: "Failed to save field configuration",
-        variant: "destructive"
-      });
-    }
-  };
-
-  // Generate QR code data
-  const generateQRData = () => {
-    if (!premise?.id) {
-      throw new Error('Premise ID not found');
-    }
-    return `${window.location.origin}/entry?premise_id=${encodeURIComponent(premise.id)}&v=${iteration}`;
-  };
-
-  // Download QR code as PNG (single-entry)
-  const handleDownloadQR = () => {
-    if (!qrGenerated || !qrValue) return;
-    const svg = document.getElementById("premise-qr-svg");
-    if (!svg) return;
-    const serializer = new XMLSerializer();
-    const source = serializer.serializeToString(svg);
-    const img = new Image();
-    img.src = "data:image/svg+xml;base64," + window.btoa(source);
-    img.onload = function () {
-      const canvas = document.createElement("canvas");
-      canvas.width = 512;
-      canvas.height = 512;
-      const ctx = canvas.getContext("2d");
-      if (ctx) {
-        ctx.fillStyle = "#fff";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        const pngFile = canvas.toDataURL("image/png");
-        const a = document.createElement("a");
-        a.href = pngFile;
-        a.download = "premise-qr-code.png";
-        a.click();
-      }
-    };
-  };
-
-  // Delete the QR code for the premise (delete row in Supabase)
-  const handleDeleteQRCode = async () => {
-    setSaving(true);
-    try {
-      if (!premise?.id) {
-        toast({
-          title: "Error",
-          description: "Premise ID not found.",
-          variant: "destructive"
-        });
-        setSaving(false);
-        return;
-      }
-      // Delete the QR code row from Supabase
-      const { error } = await supabase
-        .from("qrcode_forms")
-        .delete()
-        .eq("premise_id", premise.id);
-
-      if (error) {
-        toast({
-          title: "Failed to delete QR code",
-          description: error.message,
-          variant: "destructive",
-        });
-      } else {
-        setQrValue(null);
-        setQrGenerated(false);
-        setIteration(1);
-        toast({
-          title: "QR code deleted!",
-          description: "Premise QR code has been deleted.",
-        });
-      }
-    } finally {
-      setSaving(false);
-    }
   };
 
   // Approve entry for a visitor
@@ -1036,9 +734,15 @@ const Dashboard = () => {
       };
 
       // Add optional fields if they exist
-      if (pendingEntry.facephoto) newVisitorData.facephoto = pendingEntry.facephoto;
-      if (pendingEntry.idphoto_front) newVisitorData.idphoto_front = pendingEntry.idphoto_front;
-      if (pendingEntry.idphoto_back) newVisitorData.idphoto_back = pendingEntry.idphoto_back;
+      if ('facephoto' in pendingEntry && pendingEntry.facephoto) {
+        newVisitorData.facephoto = pendingEntry.facephoto;
+      }
+      if ('idphoto_front' in pendingEntry && pendingEntry.idphoto_front) {
+        newVisitorData.idphoto_front = pendingEntry.idphoto_front;
+      }
+      if ('idphoto_back' in pendingEntry && pendingEntry.idphoto_back) {
+        newVisitorData.idphoto_back = pendingEntry.idphoto_back;
+      }
 
       const { data: newVisitor, error: insertError } = await supabase
         .from('visitors')
@@ -1105,7 +809,11 @@ const Dashboard = () => {
 
   return (
     <MainLayout>
-      {/* ... keep existing code for rendering the dashboard UI */}
+      {/* Render the dashboard UI */}
+      <div className="p-6">
+        {/* Content goes here */}
+        <h1>Dashboard</h1>
+      </div>
     </MainLayout>
   );
 };

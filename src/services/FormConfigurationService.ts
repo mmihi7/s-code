@@ -98,12 +98,15 @@ export async function saveFormConfiguration(
     // Generate QR URL
     const qrUrl = `${window.location.origin}/entry?premise_id=${encodeURIComponent(premiseId)}&v=${newIteration}`;
 
+    // Convert fields to JSON to ensure it matches Supabase type
+    const fieldsJson = JSON.parse(JSON.stringify(fields)) as Json;
+
     // Save using upsert to handle both insert and update cases
     const { error } = await supabase
       .from('qrcode_forms')
       .upsert({
         premise_id: premiseId,
-        form_fields: fields,
+        form_fields: fieldsJson,
         qrcode_url: qrUrl,
         iteration: newIteration,
         generated_at: new Date().toISOString()
