@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
@@ -7,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Check, LogIn, Clock, XCircle, UserPlus, Zap } from "lucide-react";
-import { supabase } from "@/lib/supabaseClient";
+import { supabase } from "@/integrations/supabase/client";
 import sha256 from "crypto-js/sha256";
 import { useToast } from "@/components/ui/use-toast";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -121,6 +122,9 @@ const PhotoInput: React.FC<PhotoInputProps> = ({ value, onChange }) => {
   );
 };
 
+// Define visitor status type
+type VisitorStatus = 'pending' | 'approved' | 'denied' | null;
+
 const VisitorEntry = () => {
   const location = useLocation();
   const query = new URLSearchParams(location.search);
@@ -132,7 +136,7 @@ const VisitorEntry = () => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [visitorId, setVisitorId] = useState<string | null>(null);
-  const [visitorStatus, setVisitorStatus] = useState<'pending' | 'approved' | 'denied' | null>(null);
+  const [visitorStatus, setVisitorStatus] = useState<VisitorStatus>(null);
   const [denialReason, setDenialReason] = useState<string | null>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -141,6 +145,8 @@ const VisitorEntry = () => {
   const [signatureGenerated, setSignatureGenerated] = useState(false);
   const [premise, setPremise] = useState<{ name: string } | null>(null);
   const [showPendingModal, setShowPendingModal] = useState(false);
+  const [hasActiveVisit, setHasActiveVisit] = useState(false);
+  const [activeVisitId, setActiveVisitId] = useState<string | null>(null);
 
   // Validate QR code and fetch premise fields
   useEffect(() => {
@@ -187,27 +193,47 @@ const VisitorEntry = () => {
         // Parse form fields
         const fields = Array.isArray(qrConfig.form_fields) 
           ? qrConfig.form_fields 
-          : JSON.parse(qrConfig.form_fields);
+          : JSON.parse(qrConfig.form_fields as string);
 
         console.log('Parsed form fields:', fields);
         setPremiseFields(fields);
 
         // If authenticated, fetch user profile and compare with required fields
         if (session?.user) {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .single();
+          // Check if user has an active visit at this premise
+          const { data: activeVisit, error: activeVisitError } = await supabase
+            .from('visitors')
+            .select('id')
+            .eq('user_id', session.user.id)
+            .eq('premise_id', premise_id)
+            .eq('status', 'active')
+            .maybeSingle();
+          
+          if (activeVisit) {
+            setHasActiveVisit(true);
+            setActiveVisitId(activeVisit.id);
+            toast({
+              title: "Active Visit Detected",
+              description: "You have an active visit at this premise that hasn't been checked out.",
+              variant: "default"
+            });
+          }
 
-          if (profile) {
-            // Map profile data to form fields
+          // Since 'profiles' table doesn't exist, get data directly from registered_users or users table
+          const { data: userData } = await supabase
+            .from('registered_users')
+            .select('*')
+            .eq('auth_user_id', session.user.id)
+            .maybeSingle();
+
+          if (userData) {
+            // Map user data to form fields
             const profileData = {
-              name: profile.full_name || '',
-              phone: profile.phone || '',
-              idnumber: profile.idnumber || '',
-              email: profile.email || session.user.email || '',
-              photo: profile.photo || '',
+              name: userData.name || '',
+              phone: userData.phone || '',
+              idnumber: userData.idnumber || '',
+              email: userData.email || session.user.email || '',
+              photo: userData.facephoto || '',
               // Add any other standard profile fields here
             };
 
@@ -278,7 +304,9 @@ const VisitorEntry = () => {
         }
 
         if (data) {
-          setVisitorStatus(data.status);
+          // Type assertion to ensure we're setting a valid status
+          const newStatus = data.status as VisitorStatus;
+          setVisitorStatus(newStatus);
           if (data.message) {
             toast({
               title: data.status === 'approved' ? "Entry Approved" : "Status Update",
@@ -301,7 +329,7 @@ const VisitorEntry = () => {
         clearInterval(statusCheckInterval);
       }
     };
-  }, [visitorId, visitorStatus, supabase]);
+  }, [visitorId, visitorStatus, toast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -345,45 +373,43 @@ const VisitorEntry = () => {
         throw new Error("You must accept the terms and conditions");
       }
 
-      // Check for active visits
-      const { data: activeVisitor, error: activeError } = await supabase
-        .from('entries')
-        .select('*')
-        .eq('idnumber', formData.idnumber)
-        .eq('premise_id', premise_id)
-        .eq('status', 'active')
-        .single();
+      // Create the entry object based on form data
+      const entryData: Record<string, any> = {
+        premise_id: premise_id,
+        name: formData.name?.trim(),
+        phone: formData.phone?.trim(),
+        idnumber: formData.idnumber?.trim(),
+        email: formData.email?.trim(),
+        purpose: formData.purpose?.trim(),
+        department: formData.department?.trim(),
+        visitingperson: formData.visitingperson?.trim(),
+        vehicle: formData.vehicle?.trim() || null,
+        authenticated: isAuthenticated,
+        user_id: isAuthenticated ? session.user.id : null,
+        submitted_at: new Date().toISOString(),
+        status: 'pending',
+        signature: formData.signature || null
+      };
 
-      if (activeError && activeError.code !== 'PGRST116') {
-        throw activeError;
+      // If the user has an active visit, add that information to the entry
+      if (hasActiveVisit && activeVisitId) {
+        entryData.message = `Visitor has an unchecked visit (ID: ${activeVisitId})`;
       }
 
       // Create the entry as pending
       const { data: pendingEntry, error: pendingError } = await supabase
-        .from('entries')
-        .insert([{
-          premise_id: premise_id,
-          name: formData.name?.trim(),
-          phone: formData.phone?.trim(),
-          idnumber: formData.idnumber?.trim(),
-          email: formData.email?.trim(),
-          purpose: formData.purpose?.trim(),
-          department: formData.department?.trim(),
-          visitingperson: formData.visitingperson?.trim(),
-          vehicle: formData.vehicle?.trim(),
-          authenticated: isAuthenticated,
-          user_id: isAuthenticated ? session.user.id : null,
-          submitted_at: new Date().toISOString(),
-          status: 'pending',
-          signature: formData.signature || null,
-          message: activeVisitor ? 
-            `Visitor has an unchecked visit from ${new Date(activeVisitor.checked_in_at).toLocaleString()}` : 
-            null
-        }])
+        .from('pending_entries')
+        .insert([entryData])
         .select()
         .single();
 
-      if (pendingError) throw pendingError;
+      if (pendingError) {
+        // Check if this is a row-level security error
+        if (pendingError.code === 'PGRST301' || pendingError.message?.includes('row-level security')) {
+          throw new Error("Permission denied. Please make sure you are logged in and have the necessary permissions.");
+        }
+        throw pendingError;
+      }
 
       // Show normal pending modal to visitor
       setVisitorId(pendingEntry.id);
@@ -429,17 +455,17 @@ const VisitorEntry = () => {
         description: "We've sent you a magic link to complete your account setup.",
       });
 
-      // Save the visitor details to profiles table
-      const { error: profileError } = await supabase
-        .from('profiles')
+      // Save the visitor details to registered_users table instead of profiles
+      const { error: userError } = await supabase
+        .from('registered_users')
         .insert([{
-          full_name: formData.name,
+          name: formData.name,
           email: email,
           phone: formData.phone,
           created_at: new Date().toISOString(),
         }]);
 
-      if (profileError) throw profileError;
+      if (userError) throw userError;
 
     } catch (error: any) {
       console.error('Error:', error);
@@ -511,51 +537,61 @@ const VisitorEntry = () => {
             </CardHeader>
             <CardContent className="text-center">
               <p className="text-white/70">Please wait while the premise administrator reviews your entry request.</p>
+              
+              {hasActiveVisit && (
+                <div className="mt-4 p-3 bg-yellow-500/20 rounded-md border border-yellow-500/30">
+                  <p className="text-yellow-200 text-sm">
+                    Note: You have an active visit that needs to be checked out. The administrator will handle this.
+                  </p>
+                </div>
+              )}
             </CardContent>
           </Card>
 
           {/* Sign up prompt */}
-          <Card className="w-full max-w-lg bg-gradient-to-br from-blue-600/20 to-purple-600/20 border-blue-500/50">
-            <CardHeader>
-              <CardTitle className="text-xl text-center flex items-center justify-center gap-2">
-                <Zap className="text-yellow-500" />
-                Quick Check-in Feature
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-start space-x-4 p-4 bg-white/5 rounded-lg">
-                <div className="flex-shrink-0">
-                  <UserPlus className="h-6 w-6 text-blue-400" />
+          {!isAuthenticated && (
+            <Card className="w-full max-w-lg bg-gradient-to-br from-blue-600/20 to-purple-600/20 border-blue-500/50">
+              <CardHeader>
+                <CardTitle className="text-xl text-center flex items-center justify-center gap-2">
+                  <Zap className="text-yellow-500" />
+                  Quick Check-in Feature
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-start space-x-4 p-4 bg-white/5 rounded-lg">
+                  <div className="flex-shrink-0">
+                    <UserPlus className="h-6 w-6 text-blue-400" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-medium mb-2">Create an Account for Faster Check-ins</h4>
+                    <p className="text-sm text-white/70 mb-4">
+                      Save your details now and enjoy single-click check-ins at any premise! No more filling out forms repeatedly.
+                    </p>
+                    <ul className="text-sm space-y-2 mb-4">
+                      <li className="flex items-center gap-2">
+                        <Check className="h-4 w-4 text-green-500" />
+                        Instant check-ins at any premise
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <Check className="h-4 w-4 text-green-500" />
+                        Your details are securely stored
+                      </li>
+                      <li className="flex items-center gap-2">
+                        <Check className="h-4 w-4 text-green-500" />
+                        View your visit history
+                      </li>
+                    </ul>
+                    <Button 
+                      className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
+                      onClick={() => handleSignUp()}
+                    >
+                      Create Account with Current Details
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <h4 className="font-medium mb-2">Create an Account for Faster Check-ins</h4>
-                  <p className="text-sm text-white/70 mb-4">
-                    Save your details now and enjoy single-click check-ins at any premise! No more filling out forms repeatedly.
-                  </p>
-                  <ul className="text-sm space-y-2 mb-4">
-                    <li className="flex items-center gap-2">
-                      <Check className="h-4 w-4 text-green-500" />
-                      Instant check-ins at any premise
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <Check className="h-4 w-4 text-green-500" />
-                      Your details are securely stored
-                    </li>
-                    <li className="flex items-center gap-2">
-                      <Check className="h-4 w-4 text-green-500" />
-                      View your visit history
-                    </li>
-                  </ul>
-                  <Button 
-                    className="w-full bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600"
-                    onClick={() => handleSignUp()}
-                  >
-                    Create Account with Current Details
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          )}
         </div>
       );
     }
@@ -588,23 +624,6 @@ const VisitorEntry = () => {
             <p className="text-white/70 text-center">
               Reason: {denialReason || "No reason provided"}
             </p>
-          </CardContent>
-        </Card>
-      );
-    }
-
-    if (visitorStatus === 'awaiting_approval') {
-      return (
-        <Card className="w-full max-w-lg">
-          <CardHeader>
-            <CardTitle className="text-2xl text-center">Awaiting Approval</CardTitle>
-            <CardDescription className="text-center flex items-center justify-center">
-              <Clock className="animate-spin mr-2" />
-              Your entry request is being reviewed
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="text-center">
-            <p className="text-white/70">Please wait while the premise administrator reviews your entry request.</p>
           </CardContent>
         </Card>
       );
@@ -669,6 +688,16 @@ const VisitorEntry = () => {
               <CardDescription className="text-center">
                 Welcome to {premise?.name}! Please fill in your details to check in.
               </CardDescription>
+              {hasActiveVisit && (
+                <div className="mt-4 p-3 bg-yellow-500/20 rounded-md border border-yellow-500/30">
+                  <p className="text-yellow-200 text-sm font-medium">
+                    Note: You have an active visit at this premise that hasn't been checked out.
+                  </p>
+                  <p className="text-yellow-200/80 text-xs mt-1">
+                    Your new check-in request will be processed after reviewing your previous visit.
+                  </p>
+                </div>
+              )}
             </CardHeader>
             <form onSubmit={handleSubmit} className="space-y-6 px-6 pb-6">
               {/* Form fields */}
@@ -719,6 +748,13 @@ const VisitorEntry = () => {
               <DialogTitle>Entry Request Pending</DialogTitle>
               <div className="space-y-4 text-center">
                 <p>Your entry request has been submitted and is pending approval.</p>
+                {hasActiveVisit && (
+                  <div className="p-3 bg-yellow-500/20 rounded-md border border-yellow-500/30 text-left">
+                    <p className="text-yellow-200 text-sm font-medium">
+                      Your previous visit will need to be checked out by the administrator.
+                    </p>
+                  </div>
+                )}
                 {isAuthenticated ? (
                   <p>You will be notified when your request is approved.</p>
                 ) : (

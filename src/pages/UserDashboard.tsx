@@ -1,16 +1,25 @@
-
 import React, { useState, useEffect } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Camera, QrCode, History, MapPin, Clock, ChevronRight, X } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client"; 
+
+// Define the correct type for visit history items
+interface VisitHistoryItem {
+  id: string | number; // Allow both string and number types for id
+  premiseName: string;
+  location: string;
+  date: string;
+  time: string;
+}
 
 const UserDashboard = () => {
   const [showScanDialog, setShowScanDialog] = useState(true);
-  const [visitHistory, setVisitHistory] = useState([
+  const [visitHistory, setVisitHistory] = useState<VisitHistoryItem[]>([
     {
       id: 1,
       premiseName: "ABC Office Building",
@@ -33,9 +42,49 @@ const UserDashboard = () => {
       time: "11:45 AM",
     }
   ]);
+  
   const { toast } = useToast();
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   const videoRef = React.useRef<HTMLVideoElement>(null);
+
+  // Fetch user's visit history
+  useEffect(() => {
+    const fetchUserVisitHistory = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (user) {
+          const { data, error } = await supabase
+            .from('visitors')
+            .select('id, premise_id, checked_in_at, premises(name, address)')
+            .eq('user_id', user.id)
+            .order('checked_in_at', { ascending: false })
+            .limit(10);
+            
+          if (error) throw error;
+          
+          if (data && data.length > 0) {
+            const processedVisits: VisitHistoryItem[] = data.map(visit => {
+              const date = new Date(visit.checked_in_at);
+              return {
+                id: visit.id,
+                premiseName: visit.premises?.name || 'Unknown Premise',
+                location: visit.premises?.address || 'Unknown Location',
+                date: date.toLocaleDateString(),
+                time: date.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+              };
+            });
+            
+            setVisitHistory(processedVisits);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching visit history:', error);
+      }
+    };
+    
+    fetchUserVisitHistory();
+  }, []);
 
   // Start camera when scan dialog opens
   useEffect(() => {
@@ -83,14 +132,37 @@ const UserDashboard = () => {
     setShowScanDialog(false);
   };
 
-  // Mock function to handle QR code detection
-  const handleQRCodeDetected = (premiseData: { name: string, location: string }) => {
-    toast({
-      title: "QR Code Scanned",
-      description: `Checking in at ${premiseData.name}`,
-    });
-    setShowScanDialog(false);
-    // In a real app, would send check-in data to server
+  // Handle QR code detection
+  const handleQRCodeDetected = async (premiseData: { id: string, name: string, location: string }) => {
+    try {
+      toast({
+        title: "QR Code Scanned",
+        description: `Checking in at ${premiseData.name}`,
+      });
+      
+      setShowScanDialog(false);
+      
+      // Check if user has an active visit (not checked out)
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        // Redirect to visitor entry with premise_id
+        window.location.href = `/entry?premise_id=${premiseData.id}`;
+      } else {
+        toast({
+          title: "Authentication Required",
+          description: "Please sign in to check in at this premise",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Error during check-in:', error);
+      toast({
+        title: "Check-in Error",
+        description: "An error occurred during check-in",
+        variant: "destructive"
+      });
+    }
   };
 
   return (
@@ -207,7 +279,7 @@ const UserDashboard = () => {
               {/* For testing purposes - in a real app, this would be handled by QR code detection */}
               <Button 
                 className="bg-scode-blue hover:bg-scode-blue/90 w-full"
-                onClick={() => handleQRCodeDetected({ name: "Test Premise", location: "Test Location" })}
+                onClick={() => handleQRCodeDetected({ id: "J824093G", name: "Test Premise", location: "Test Location" })}
               >
                 <QrCode className="mr-2 h-4 w-4" />
                 Simulate Successful Scan

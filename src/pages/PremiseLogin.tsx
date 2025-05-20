@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import MainLayout from "@/components/layout/MainLayout";
@@ -37,13 +38,7 @@ const PremiseLogin = () => {
 
       if (premiseError) throw premiseError;
 
-      // Update last login time and set premise metadata in auth
-      await supabase
-        .from('premises')
-        .update({ last_login: new Date().toISOString() })
-        .eq('id', premiseData.id);
-
-      // Set premise data in auth metadata
+      // Update timestamps and metadata in auth metadata
       await supabase.auth.updateUser({
         data: {
           premise_id: premiseData.id,
